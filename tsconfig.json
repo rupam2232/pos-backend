@@ -1,0 +1,16 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "ESNext",                       // use ES modules
+    "moduleResolution": "node",               // Use Node.js module resolution
+    "strict": true,                           // Enable all strict type-checking options
+    "esModuleInterop": true,                  // Compatibility for CommonJS/ES modules
+    "skipLibCheck": true,                     // Skip type checks of node_modules (speed up build)
+    "forceConsistentCasingInFileNames": true, // Enforce consistent file name casing
+    "outDir": "dist",                         // Output compiled JS files here
+    "rootDir": "src",                         // Source TS files root
+    "noEmitOnError": true                     // Prevent emitting JS if type errors exist
+  },
+  "include": ["src/**/*"],                    // Include all TS files under src
+  "exclude": ["node_modules", "dist"]         // Exclude these folders
+}
