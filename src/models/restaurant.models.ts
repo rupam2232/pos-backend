@@ -1,0 +1,69 @@
+// Defines the Restaurant schema and model for MongoDB using Mongoose
+import { Schema, model, Document, Types } from "mongoose";
+
+/**
+ * TypeScript interface for a Restaurant document.
+ * Represents a restaurant's core information and settings.
+ */
+export interface Restaurant extends Document {
+  restaurantName: string; // Full name of the restaurant
+  slug: string; // Slug for the restaurant (unique, 3-8 chars)
+  logoUrl?: string; // Optional URL to the restaurant's logo
+  description?: string; // Optional description of the restaurant
+  isCurrentlyOpen: boolean; // Whether the restaurant is currently open
+  ownerId: Types.ObjectId; // Reference to the User who owns the restaurant
+  categories?: string[]; // Optional array of categories/cuisines
+  openingTime?: string; // Optional opening time (e.g., "09:00")
+  closingTime?: string; // Optional closing time (e.g., "22:00")
+}
+
+/**
+ * Mongoose schema for the Restaurant collection.
+ */
+const restaurantSchema: Schema<Restaurant> = new Schema(
+  {
+    restaurantName: {
+      type: String,
+      required: [true, "Restaurant name is required"],
+      trim: true,
+    },
+    slug: {
+      type: String,
+      required: [true, "A short restaurant name (slug) is required"],
+      trim: true,
+      unique: true,
+      validate: {
+        validator: function (str: string) {
+          return str.length >= 3 && str.length <= 8;
+        },
+        message: "Short name (slug) must be 3-8 characters",
+      },
+    },
+    logoUrl: String,
+    description: String,
+    isCurrentlyOpen: {
+      type: Boolean,
+      required: [true, "Is currently open is required"],
+      default: false,
+    },
+    ownerId: {
+      type: Schema.Types.ObjectId,
+      ref: "User",
+      required: [true, "Id of the owner is required"],
+    },
+    categories: {
+        type: [String],
+        default: []
+    },
+    openingTime: String,
+    closingTime: String,
+  },
+  {
+    timestamps: true,
+  }
+);
+
+/**
+ * Mongoose model for the Restaurant schema.
+ */
+export const Restaurant = model<Restaurant>("Restaurant", restaurantSchema);
