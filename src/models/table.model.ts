@@ -29,7 +29,6 @@ const tableSchema: Schema<Table> = new Schema(
     },
     qrSlug: {
       type: String,
-      unique: true,
       required: [true, "A unique slug is required"],
     },
     isOccupied: {
@@ -45,6 +44,18 @@ const tableSchema: Schema<Table> = new Schema(
     timestamps: true,
   }
 );
+
+/**
+ * Compound index to ensure all qr slugs are unique per restaurant.
+ * Allows the qr slug to be used by different restaurants, but only once per restaurant.
+ */
+tableSchema.index({ restaurantId: 1, qrSlug: 1 }, { unique: true });
+
+/**
+ * Compound index to ensure all table names are unique per restaurant.
+ * Allows the table name to be used by different restaurants, but only once per restaurant.
+ */
+tableSchema.index({ restaurantId: 1, tableName: 1 }, { unique: true });
 
 /**
  * Mongoose model for the Table schema.

@@ -110,6 +110,12 @@ const foodItemSchema: Schema<FoodItem> = new Schema({
 });
 
 /**
+ * Compound index to ensure all food names are unique per restaurant.
+ * Allows the food name to be used by different restaurants, but only once per restaurant.
+ */
+foodItemSchema.index({ restaurantId: 1, foodName: 1}, { unique: true})
+
+/**
  * Mongoose model for the FoodItem schema.
  */
 export const FoodItem = model<FoodItem>("FoodItem", foodItemSchema);
