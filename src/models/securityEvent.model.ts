@@ -7,7 +7,7 @@ import { Schema, model, Document, Types } from "mongoose";
  */
 export interface SecurityEvent extends Document{
     userId: Types.ObjectId; // Reference to the User
-    eventType: string;      // Type of security event
+    eventType: "new_login" | "password_change" | "signup";      // Type of security event
     ipAddress: string;      // IP address where the event occurred
     userAgent: string;      // User agent string of the device/browser
 }

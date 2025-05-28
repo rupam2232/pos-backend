@@ -15,6 +15,9 @@ export interface Restaurant extends Document {
   categories?: string[]; // Optional array of categories/cuisines
   openingTime?: string; // Optional opening time (e.g., "09:00")
   closingTime?: string; // Optional closing time (e.g., "22:00")
+  taxRate: number; // Number of percentage owner wants to charge for taxes based on the sub total of order value like 5
+  taxLabel?: string; // "GST", "VAT"
+  isTaxIncludedInPrice: boolean; // Is taxes are already included with all food item's price
 }
 
 /**
@@ -52,11 +55,20 @@ const restaurantSchema: Schema<Restaurant> = new Schema(
       required: [true, "Id of the owner is required"],
     },
     categories: {
-        type: [String],
-        default: []
+      type: [String],
+      default: [],
     },
     openingTime: String,
     closingTime: String,
+    taxRate: {
+      type: Number,
+      default: 0,
+    },
+    taxLabel: String,
+    isTaxIncludedInPrice: {
+      type: Boolean,
+      required: [true, "Is tax included in price is required"],
+    },
   },
   {
     timestamps: true,

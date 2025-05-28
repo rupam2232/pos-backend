@@ -7,7 +7,7 @@ import { Schema, model, Document, Types } from "mongoose";
  */
 export interface Subscription extends Document{
     userId: Types.ObjectId;             // Reference to the User
-    plan?: string;                      // Subscription plan name
+    plan?: "starter" | "medium" | "pro";                      // Subscription plan name
     isTrial: boolean;                   // Whether the subscription is a trial
     trialExpiresAt?: Date;              // When the trial expires
     subscriptionStartDate?: Date;       // When the subscription starts

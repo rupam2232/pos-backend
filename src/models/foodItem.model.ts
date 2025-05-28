@@ -46,7 +46,7 @@ export interface FoodItem extends Document {
   variants: FoodVariant[];        // Array of variants (if any)
   imageUrls?: string[];           // Optional array of image URLs
   category?: string;              // Optional category (e.g., "Indian", "Snacks")
-  foodType: string;               // Type of the food (veg or non-veg)
+  foodType: "veg" | "non-veg";               // Type of the food (veg or non-veg)
   description?: string;           // Optional description of the food item
   tags?: string[];                // Optional tags for search/filtering (e.g., "Spicy", "Veg")
   isAvailable: boolean;           // Whether the item is currently available

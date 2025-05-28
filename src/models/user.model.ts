@@ -12,7 +12,7 @@ export interface User extends Document {
   email: string;
   password?: string;
   avatar?: string;
-  role: string;
+  role: "admin" | "owner" | "staff";
   restaurantIds?: Types.ObjectId[];
   oauthProvider?: string;
   oauthId?: string;

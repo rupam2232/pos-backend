@@ -40,11 +40,11 @@ export interface Order extends Document {
   restaurantId: Types.ObjectId; // Reference to the Restaurant
   tableId: Types.ObjectId; // Reference to the Table
   foodItems: FoodItem[]; // Array of ordered food items
-  status: string; // Order status (pending, preparing, etc.)
+  status: "pending" | "preparing" | "ready" | "served" | "completed" | "cancelled"; // Order status (pending, preparing, etc.)
   totalAmount: number; // The original total before discounts
   discountAmount?: number; // The discount applied (if any)
   finalAmount: number; // The amount the user actually paid
-  paymentMethod: string; // Payment method (online, cash)
+  paymentMethod: "online" | "cash"; // Payment method (online, cash)
   isPaid: boolean; // Whether the order is paid
   notes?: string; // Optional notes for the order
   couponUsed?: string; // Optional coupon code used
