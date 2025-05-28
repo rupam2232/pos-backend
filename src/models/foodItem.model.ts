@@ -6,7 +6,7 @@ import { Schema, model, Document, Types } from "mongoose";
  * Represents a specific variant of a food item (e.g., size, flavor).
  */
 export interface FoodVariant extends Document {
-  label: string;           // Name/label of the variant (e.g., "Large", "Spicy")
+  variantName: string;      // Name/label of the variant (e.g., "Large", "Spicy")
   price: number;           // Price for this variant
   description?: string;    // Description for this variant
   discountedPrice?: number;// Optional discounted price for this variant
@@ -17,9 +17,9 @@ export interface FoodVariant extends Document {
  * Mongoose schema for the FoodVariant subdocument.
  */
 const foodVariantSchema: Schema<FoodVariant> = new Schema({
-  label: {
+  variantName: {
     type: String,
-    required: [true, "Label is required"],
+    required: [true, "Variant's name is required"],
   },
   price: {
     type: Number,
