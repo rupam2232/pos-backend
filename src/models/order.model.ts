@@ -40,20 +40,28 @@ export interface Order extends Document {
   restaurantId: Types.ObjectId; // Reference to the Restaurant
   tableId: Types.ObjectId; // Reference to the Table
   foodItems: FoodItem[]; // Array of ordered food items
-  status: "pending" | "preparing" | "ready" | "served" | "completed" | "cancelled"; // Order status (pending, preparing, etc.)
+  status:
+    | "pending"
+    | "preparing"
+    | "ready"
+    | "served"
+    | "completed"
+    | "cancelled"; // Order status (pending, preparing, etc.)
   totalAmount: number; // The original total before discounts
   discountAmount?: number; // The discount applied (if any)
   finalAmount: number; // The amount the user actually paid
   paymentMethod: "online" | "cash"; // Payment method (online, cash)
   isPaid: boolean; // Whether the order is paid
   notes?: string; // Optional notes for the order
-  couponUsed?: string; // Optional coupon code used
+  couponUsed?: Types.ObjectId; // Optional reference to the coupon code used
   externalOrderId?: string; // Optional external/third-party order ID
   externalPlatform?: string; // Optional name of the external platform (e.g., Zomato, Swiggy)
   kitchenStaffId?: Types.ObjectId; // Optional reference to the kitchen staff handling the order
   customerName?: string; // Optional name of the customer for external orders
   customerPhone?: string; // Optional phone number of the customer for external orders
   deliveryAddress?: string; // Optional delivery address of the customer for external orders
+  createdAt: Date; // Timestamp when the document was first created (set automatically, never changes)
+  updatedAt?: Date; // Timestamp when the document was last updated (set automatically, updates on modification)
 }
 
 /**
@@ -65,6 +73,7 @@ const orderSchema: Schema<Order> = new Schema(
       type: Schema.Types.ObjectId,
       ref: "Restaurant",
       required: [true, "Restaurant id is required"],
+      immutable: true,
     },
     tableId: {
       type: Schema.Types.ObjectId,
@@ -80,6 +89,7 @@ const orderSchema: Schema<Order> = new Schema(
         },
         message: "Order must contain at least one food item",
       },
+      immutable: true,
     },
     status: {
       type: String,
@@ -93,40 +103,86 @@ const orderSchema: Schema<Order> = new Schema(
         "cancelled",
       ],
       default: "pending",
+      immutable(doc) {
+        return doc.status === "completed" || doc.status === "cancelled";
+      },
     },
     totalAmount: {
       type: Number,
       required: [true, "Total amount is required"],
+      immutable: true,
     },
     discountAmount: {
       type: Number,
       default: 0,
+      immutable: true,
     },
     finalAmount: {
       type: Number,
       required: [true, "Final amount is required"],
+      immutable: true,
     },
     paymentMethod: {
       type: String,
       required: [true, "Payment method is required"],
       enum: ["online", "cash"],
+      immutable(doc) {
+        return doc.status === "completed" || doc.status === "cancelled";
+      },
     },
     isPaid: {
       type: Boolean,
       required: [true, "Is paid is required"],
       default: false,
+      immutable(doc) {
+        return doc.status === "completed" || doc.status === "cancelled";
+      },
     },
     notes: String,
-    couponUsed: String,
-    externalOrderId: String,
-    externalPlatform: String,
+    couponUsed: {
+      type: Schema.Types.ObjectId,
+      ref: "Coupon",
+      immutable(doc) {
+        return doc.status === "completed" || doc.status === "cancelled";
+      },
+    },
+    externalOrderId: {
+      type: String,
+      immutable: true,
+    },
+    externalPlatform: {
+      type: String,
+      immutable: true,
+    },
     kitchenStaffId: {
       type: Schema.Types.ObjectId,
       ref: "User",
+      immutable(doc) {
+        return (
+          doc.status === "preparing" ||
+          doc.status === "ready" ||
+          doc.status === "served" ||
+          doc.status === "completed" ||
+          doc.status === "cancelled"
+        );
+      },
     },
-    customerName: String,
-    customerPhone: String,
-    deliveryAddress: String,
+    customerName: {
+      type: String,
+      immutable: true,
+    },
+    customerPhone: {
+      type: String,
+      immutable: true,
+    },
+    deliveryAddress: {
+      type: String,
+      immutable: true,
+    },
+    createdAt: {
+      type: Date,
+      immutable: true,
+    },
   },
   {
     timestamps: true,

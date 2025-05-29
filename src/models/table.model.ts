@@ -11,6 +11,8 @@ export interface Table extends Document {
   qrSlug: string; // Unique slug for QR code mapping
   isOccupied: boolean; // Whether the table is currently occupied
   currentOrderId?: Types.ObjectId; // Reference to the current Order (if any)
+  createdAt: Date; // Timestamp when the document was first created (set automatically, never changes)
+  updatedAt?: Date; // Timestamp when the document was last updated (set automatically, updates on modification)
 }
 
 /**
@@ -22,6 +24,7 @@ const tableSchema: Schema<Table> = new Schema(
       type: Schema.Types.ObjectId,
       ref: "Restaurant",
       required: [true, "Restaurant id is required"],
+      immutable: true
     },
     tableName: {
       type: String,

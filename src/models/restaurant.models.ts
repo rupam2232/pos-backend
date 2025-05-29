@@ -18,6 +18,9 @@ export interface Restaurant extends Document {
   taxRate: number; // Number of percentage owner wants to charge for taxes based on the sub total of order value like 5
   taxLabel?: string; // "GST", "VAT"
   isTaxIncludedInPrice: boolean; // Is taxes are already included with all food item's price
+  address?: string; // Optional address of restaurant
+  createdAt: Date; // Timestamp when the document was first created (set automatically, never changes)
+  updatedAt?: Date; // Timestamp when the document was last updated (set automatically, updates on modification)
 }
 
 /**
@@ -68,6 +71,11 @@ const restaurantSchema: Schema<Restaurant> = new Schema(
     isTaxIncludedInPrice: {
       type: Boolean,
       required: [true, "Is tax included in price is required"],
+    },
+    address: String,
+    createdAt: {
+      type: Date,
+      immutable: true,
     },
   },
   {

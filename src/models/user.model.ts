@@ -1,6 +1,6 @@
 // Defines the User schema and model for MongoDB using Mongoose
 import { Schema, model, Document, Types } from "mongoose";
-import bcrypt from "bcrypt"
+import bcrypt from "bcrypt";
 
 /**
  * TypeScript interface for a User document.
@@ -16,6 +16,8 @@ export interface User extends Document {
   restaurantIds?: Types.ObjectId[];
   oauthProvider?: string;
   oauthId?: string;
+  createdAt: Date; // Timestamp when the document was first created (set automatically, never changes)
+  updatedAt?: Date; // Timestamp when the document was last updated (set automatically, updates on modification)
 }
 
 /**
@@ -44,7 +46,8 @@ const userSchema: Schema<User> = new Schema(
       type: String,
       required: [true, "Role is required"],
       enum: ["admin", "owner", "staff"],
-      default: "owner"
+      default: "owner",
+      immutable: true,
     },
     restaurantIds: {
       type: [Schema.Types.ObjectId],
@@ -57,8 +60,22 @@ const userSchema: Schema<User> = new Schema(
         message: "You can only create maximum 4 restaurants",
       },
     },
-    oauthProvider: String,
-    oauthId: String,
+    oauthProvider: {
+      type: String,
+      immutable(doc) {
+        return !!doc.oauthProvider;
+      },
+    },
+    oauthId: {
+      type: String,
+      immutable(doc) {
+        return !!doc.oauthId;
+      },
+    },
+    createdAt: {
+      type: Date,
+      immutable: true,
+    },
   },
   {
     timestamps: true,
@@ -69,21 +86,23 @@ const userSchema: Schema<User> = new Schema(
  * Pre-save hook to hash the password before saving the user document.
  */
 userSchema.pre<User>("save", async function (next) {
-    if (!this || !this.isModified || !this.isModified("password")) return next();
+  if (!this || !this.isModified || !this.isModified("password")) return next();
 
-    this.password = await bcrypt.hash(this.password as string, 10);
+  this.password = await bcrypt.hash(this.password as string, 10);
 });
 
 /**
  * Instance method to compare a plain password with the hashed password.
  */
-userSchema.methods.isPasswordCorrect = async function (password: User["password"]): Promise<Boolean> {
-    if(!this.password || !password){
-        return false;
-    } else {
-        return await bcrypt.compare(password, this.password);
-    }
-}
+userSchema.methods.isPasswordCorrect = async function (
+  password: User["password"]
+): Promise<Boolean> {
+  if (!this.password || !password) {
+    return false;
+  } else {
+    return await bcrypt.compare(password, this.password);
+  }
+};
 
 /**
  * Mongoose model for the User schema.

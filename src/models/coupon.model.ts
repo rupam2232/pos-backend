@@ -6,15 +6,17 @@ import { Schema, model, Document, Types } from "mongoose";
  * Represents a discount coupon for a restaurant, including code, discount, usage limits, and validity.
  */
 export interface Coupon extends Document {
-  restaurantId: Types.ObjectId;   // Reference to the Restaurant this coupon belongs to
-  code: string;                   // Unique coupon code (1-10 characters, unique per restaurant)
-  discountPercent: number;        // Discount percentage (1-100)
-  isActive: boolean;              // Whether the coupon is currently active
-  minOrderAmount: number;         // Minimum order amount required to use the coupon
-  maxUses?: number;               // Maximum times this coupon can be used (optional)
-  usageCount: number;             // Number of times this coupon has been used
-  validFrom: Date;                // Start date/time for coupon validity
-  validUntil?: Date;              // End date/time for coupon validity (optional)
+  restaurantId: Types.ObjectId; // Reference to the Restaurant this coupon belongs to
+  code: string; // Unique coupon code (1-10 characters, unique per restaurant)
+  discountPercent: number; // Discount percentage (1-100)
+  isActive: boolean; // Whether the coupon is currently active
+  minOrderAmount: number; // Minimum order amount required to use the coupon
+  maxUses?: number; // Maximum times this coupon can be used (optional)
+  usageCount: number; // Number of times this coupon has been used
+  validFrom: Date; // Start date/time for coupon validity
+  validUntil?: Date; // End date/time for coupon validity (optional)
+  createdAt: Date; // Timestamp when the document was first created (set automatically, never changes)
+  updatedAt?: Date; // Timestamp when the document was last updated (set automatically, updates on modification)
 }
 
 /**
@@ -27,6 +29,7 @@ const couponSchema: Schema<Coupon> = new Schema(
       type: Schema.Types.ObjectId,
       ref: "Restaurant",
       required: [true, "Restaurant id is required"],
+      immutable: true,
     },
     code: {
       type: String,
@@ -35,8 +38,9 @@ const couponSchema: Schema<Coupon> = new Schema(
         validator: function (str: string) {
           return str.length > 0 && str.length < 11;
         },
-        message: "Code must be 1-10 characters"
+        message: "Code must be 1-10 characters",
       },
+      immutable: true,
     },
     discountPercent: {
       type: Number,
@@ -64,6 +68,10 @@ const couponSchema: Schema<Coupon> = new Schema(
       default: Date.now,
     },
     validUntil: Date,
+    createdAt: {
+      type: Date,
+      immutable: true,
+    },
   },
   {
     timestamps: true,
