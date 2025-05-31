@@ -13,7 +13,7 @@ export default async function connectDB() {
       process.env.MONGODB_URI as string
     );
     console.log(
-      `\n MongoDB connected successfully`,
+      `\nMongoDB connected successfully`,
       connectionInstance.connection.host
     );
   } catch (err) {

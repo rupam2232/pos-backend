@@ -47,6 +47,7 @@ const couponSchema: Schema<Coupon> = new Schema(
       required: [true, "Discount percent is required"],
       min: 1,
       max: 100,
+      immutable: true
     },
     isActive: {
       type: Boolean,

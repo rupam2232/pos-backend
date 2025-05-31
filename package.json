@@ -21,7 +21,9 @@
     "express": "^5.1.0",
     "helmet": "^8.1.0",
     "jsonwebtoken": "^9.0.2",
-    "mongoose": "^8.15.0"
+    "mongoose": "^8.15.0",
+    "nodemailer": "^7.0.3",
+    "request-ip": "^3.3.0"
   },
   "devDependencies": {
     "@types/bcrypt": "^5.0.2",
@@ -30,6 +32,8 @@
     "@types/express": "^5.0.2",
     "@types/jsonwebtoken": "^9.0.9",
     "@types/node": "^22.15.21",
+    "@types/nodemailer": "^6.4.17",
+    "@types/request-ip": "^0.0.41",
     "nodemon": "^3.1.10",
     "prettier": "^3.5.3",
     "ts-node-dev": "^2.0.0",

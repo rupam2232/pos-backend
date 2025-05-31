@@ -3,6 +3,7 @@ import cors from "cors";
 import cookieParser from "cookie-parser";
 import helmet from "helmet";
 import { ApiError } from "./utils/ApiError.js";
+import userRoute from "./routes/user.route.js";
 
 // Create Express app instance
 const app = express();
@@ -44,6 +45,8 @@ app.use(
     credentials: true, // Allow cookies and credentials in CORS requests
   })
 );
+
+app.use("/api/v1/user", userRoute)
 
 // Global error handler middleware
 app.use((err: any, req: Request, res: Response, next: NextFunction) => {
