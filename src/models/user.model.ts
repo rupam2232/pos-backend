@@ -68,8 +68,11 @@ const userSchema: Schema<User> = new Schema(
     },
     oauthId: {
       type: String,
+      required() {
+        return !!this.oauthProvider
+      },
       immutable(doc) {
-        return !!doc.oauthId;
+        return !!doc.oauthProvider;
       },
     },
     createdAt: {

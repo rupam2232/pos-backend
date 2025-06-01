@@ -1,31 +1,33 @@
 import nodemailer from "nodemailer";
-
-const transporter = nodemailer.createTransport({
-  service: "gmail",
-  auth: {
-    user: "me@gmail.com",
-    pass: process.env.GOOGLE_APP_PASSWORD,
-  },
-});
-
-transporter.sendMail({
-  from: '"Example Team" <team@example.com>', // sender address
-  to: "alice@example.com, bob@example.com", // list of receivers
-  subject: "Hello", // Subject line
-  text: "Hello world?", // plain text body
-  html: "<b>Hello world?</b>", // html body
-});
+import {VERIFICATION_EMAIL_TEMPLATE} from "./emailTemplates.js"
 
 type T = {
-    success: boolean;
-    message: string;
-}
+  success: boolean;
+  message: string;
+};
 
-export async function sendVerificationEmail(
+const optionsArray = [
+  {
+    context: "signup",
+    emailCategory: "Email Verification",
+    subject: "Verify your email",
+  },
+  {
+    context: "signup-success",
+    emailCategory: "Signup",
+    subject: "Sign up successful",
+  },
+  {
+    context: "change-password",
+    emailCategory: "Change password",
+    subject: "Change your password"
+  },
+];
+
+async function sendEmail(
   email: string,
-  firstName: string,
-  otp: string,
-  context: string
+  context: "signup" | "signup-success" | "change-password",
+  template: string,
 ): Promise<T> {
   try {
     const transporter = nodemailer.createTransport({
@@ -36,41 +38,32 @@ export async function sendVerificationEmail(
       },
     });
 
-    if (context && context === "signup") {
-      await transporter.sendMail({
-        from: `"${process.env.SERVER_NAME}" <${process.env.EMAIL}>`,
-        to: email,
-        subject: "Verify your email",
-        html: "",
-        headers: { "X-Email-Category": "Email Verification" },
-      });
-      return {
-        success: true,
-        message: "Verification email send successfully.",
-      };
-    } else if (context === "change-password"){
+    for (const options of optionsArray) {
+      if (context === options.context) {
         await transporter.sendMail({
-        from: `"${process.env.SERVER_NAME}" <${process.env.EMAIL}>`,
-        to: email,
-        subject: "Change your password",
-        html: "",
-        headers: { "X-Email-Category": "Change password" },
-      });
-      return {
-        success: true,
-        message: "Verification email send successfully.",
-      };
+          from: `"${process.env.SERVER_NAME}" <${process.env.EMAIL}>`,
+          to: email,
+          subject: options.subject,
+          html: template,
+          headers: { "X-Email-Category": options.emailCategory },
+        });
+        return {
+          success: true,
+          message: "email send successfully.",
+        };
+      }
     }
-    return {
-        success: false,
-        message: "Please provide a valid context"
-    }
-
-  } catch (error) {
-    console.error("Error sending verification email:", error);
     return {
       success: false,
-      message: "Failed to send verification email.",
+      message: "Please provide a valid context",
+    };
+  } catch (error) {
+    console.error("Error sending email:", error);
+    return {
+      success: false,
+      message: "Failed to send email.",
     };
   }
 }
+
+export default sendEmail
