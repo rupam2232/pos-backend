@@ -42,6 +42,7 @@ export const signup = async (
       role: user[0].role,
       avatar: "",
       firstName: "",
+      totalRestaurants: 0
     });
 
     await DeviceSession.create(
@@ -94,7 +95,7 @@ export const signup = async (
 
     await session.commitTransaction();
     session.endSession();
-    console.log(user, subscription)
+
     sendEmail(email, "signup-success", SIGNUP_EMAIL_TEMPLATE.replace("{name}", user[0].firstName ?? "User"))
 
     const options = {

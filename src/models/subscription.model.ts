@@ -25,6 +25,7 @@ const subscriptionSchema: Schema<Subscription> = new Schema(
     userId: {
       type: Schema.Types.ObjectId,
       ref: "User",
+      unique: true,
       required: [true, "Id of the user is required"],
       immutable: true,
     },

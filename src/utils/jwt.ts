@@ -8,6 +8,7 @@ interface accessTokeUser {
   avatar?: string;
   oauthId?: string;
   firstName?: string;
+  totalRestaurants: number
 }
 
 export const generateAccessToken = (user: accessTokeUser) => {

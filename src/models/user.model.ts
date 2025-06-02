@@ -16,6 +16,7 @@ export interface User extends Document {
   restaurantIds?: Types.ObjectId[];
   oauthProvider?: string;
   oauthId?: string;
+  isPasswordCorrect(password: string): Promise<boolean>;
   createdAt: Date; // Timestamp when the document was first created (set automatically, never changes)
   updatedAt?: Date; // Timestamp when the document was last updated (set automatically, updates on modification)
 }
@@ -40,6 +41,9 @@ const userSchema: Schema<User> = new Schema(
     },
     password: {
       type: String,
+      required() {
+        return !this.oauthProvider;
+      },
     },
     avatar: String,
     role: {
@@ -68,8 +72,10 @@ const userSchema: Schema<User> = new Schema(
     },
     oauthId: {
       type: String,
+      unique: true,
+      sparse: true,
       required() {
-        return !!this.oauthProvider
+        return !!this.oauthProvider;
       },
       immutable(doc) {
         return !!doc.oauthProvider;

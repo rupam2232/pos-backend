@@ -1,5 +1,4 @@
 import nodemailer from "nodemailer";
-import {VERIFICATION_EMAIL_TEMPLATE} from "./emailTemplates.js"
 
 type T = {
   success: boolean;
@@ -21,12 +20,16 @@ const optionsArray = [
     context: "change-password",
     emailCategory: "Change password",
     subject: "Change your password"
+  }, {
+    context: "new-login",
+    emailCategory: "New Login",
+    subject: "New login detected",
   },
 ];
 
 async function sendEmail(
   email: string,
-  context: "signup" | "signup-success" | "change-password",
+  context: "signup" | "signup-success" | "change-password" | "new-login",
   template: string,
 ): Promise<T> {
   try {

@@ -29,11 +29,13 @@ const deviceSessionSchema: Schema<DeviceSession> = new Schema(
     },
     ipAddress: {
       type: String,
+      default: "Unknown IP",
       required: [true, "Ip address is required"],
       immutable: true,
     },
     userAgent: {
       type: String,
+      default: "Unknown User Agent",
       required: [true, "User agent is required"],
       immutable: true,
     },
