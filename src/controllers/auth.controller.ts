@@ -16,14 +16,17 @@ import {
 } from "../utils/emailTemplates.js";
 import { OAuth2Client } from "google-auth-library";
 
+// Handles user registration with email/password, device/session logging, security event, and trial subscription creation. Sends welcome email and sets auth cookies.
 export const signup = async (
   req: Request,
   res: Response,
   next: NextFunction
 ) => {
+  // Start a MongoDB session for transaction
   const session = await startSession();
   session.startTransaction();
   try {
+    // Validate input
     if (!req?.body?.email || !req?.body?.password) {
       throw new ApiError(
         400,
@@ -32,18 +35,22 @@ export const signup = async (
     }
     const { email, password } = req.body;
 
+    // Check for empty values
     if ([email, password].some((value) => value?.trim() === "")) {
       throw new ApiError(400, "Email and Password both fields are required");
     }
 
+    // Prevent duplicate users
     const isUserExists = await User.findOne({ email }).session(session);
 
     if (isUserExists) {
       throw new ApiError(400, "User already exists");
     }
 
+    // Create user document
     const user = await User.create([{ email, password }], { session });
 
+    // Generate JWT tokens for authentication
     const refreshToken = generateRefreshToken(user[0]._id as string);
     const accessToken = generateAccessToken({
       _id: user[0]._id as string,
@@ -54,6 +61,7 @@ export const signup = async (
       totalRestaurants: user[0].restaurantIds?.length || 0,
     });
 
+    // Create device session document for security and session management
     await DeviceSession.create(
       [
         {
@@ -66,6 +74,7 @@ export const signup = async (
       { session }
     );
 
+    // Create security event document for auditing
     await SecurityEvent.create(
       [
         {
@@ -79,6 +88,7 @@ export const signup = async (
       { session }
     );
 
+    // Create a trial subscription for the new user
     const subscription = await Subscription.create(
       [
         {
@@ -91,6 +101,7 @@ export const signup = async (
       { session }
     );
 
+    // Create subscription history for future reference
     await SubscriptionHistory.create(
       [
         {
@@ -103,15 +114,18 @@ export const signup = async (
       { session }
     );
 
+    // Commit transaction to save all changes atomically
     await session.commitTransaction();
     session.endSession();
 
+    // Send welcome email (non-blocking)
     sendEmail(
       email,
       "signup-success",
       SIGNUP_EMAIL_TEMPLATE.replace("{name}", user[0].firstName ?? "User")
     );
 
+    // Set secure cookies and send response
     const options = {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
@@ -141,20 +155,24 @@ export const signup = async (
         )
       );
   } catch (err) {
+    // Rollback transaction on error
     await session.abortTransaction();
     session.endSession();
     next(err);
   }
 };
 
+// Handles user login, device session management, security event logging, and sets auth cookies
 export const signin = async (
   req: Request,
   res: Response,
   next: NextFunction
 ) => {
+  // Start a MongoDB session for transaction
   const session = await startSession();
   session.startTransaction();
   try {
+    // Validate required fields in request body
     if (!req?.body?.email || !req?.body?.password) {
       throw new ApiError(
         400,
@@ -163,12 +181,14 @@ export const signin = async (
     }
     const { email, password } = req.body;
 
+    // Find user by email and check password
     const user = await User.findOne({ email }).session(session);
 
     if (!user || !(await user.isPasswordCorrect(password))) {
       throw new ApiError(401, "Invalid credentials");
     }
 
+    // Generate JWT tokens for authentication
     const refreshToken = generateRefreshToken(user._id as string);
     const accessToken = generateAccessToken({
       _id: user._id as string,
@@ -179,6 +199,7 @@ export const signin = async (
       totalRestaurants: user.restaurantIds?.length || 0,
     });
 
+    // Check for existing device session for this user/device
     const deviceSession = await DeviceSession.findOne({
       userId: user._id,
       ipAddress: requestIp.getClientIp(req),
@@ -186,16 +207,19 @@ export const signin = async (
     }).session(session);
 
     if (deviceSession) {
+      // If session is revoked, deny access
       if (deviceSession.revoked) {
         throw new ApiError(
           401,
           "You don't have permission to access this account"
         );
       }
+      // Update session with new refresh token and last active time
       deviceSession.refreshToken = refreshToken;
       deviceSession.lastActiveAt = new Date();
       await deviceSession.save();
     } else {
+      // If no session, create a new device session
       await DeviceSession.create(
         [
           {
@@ -207,7 +231,7 @@ export const signin = async (
         ],
         { session }
       );
-
+      // Send new device login notification email
       const { success } = await sendEmail(
         email,
         "new-login",
@@ -216,6 +240,7 @@ export const signin = async (
           .replace("{device}", req.header("user-agent") || "Unknown User Agent")
       );
 
+      // Log security event for new login
       await SecurityEvent.create(
         [
           {
@@ -230,9 +255,11 @@ export const signin = async (
       );
     }
 
+    // Commit transaction and end session
     await session.commitTransaction();
     session.endSession();
 
+    // Set secure cookies for tokens and send response
     const options = {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
@@ -263,25 +290,31 @@ export const signin = async (
         )
       );
   } catch (err) {
+    // Rollback transaction on error
     await session.abortTransaction();
     session.endSession();
     next(err);
   }
 };
 
-export const googleSignIn = async (
+// Handles Google OAuth sign-in and sign-up, manages device/session/subscription, logs security events, sends emails, and sets auth cookies
+export const googleSignin = async (
   req: Request,
   res: Response,
   next: NextFunction
 ) => {
+  // Start a MongoDB session for transaction
   const session = await startSession();
   session.startTransaction();
   try {
+    // Verify Google ID token from request
     const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+    // Check if ID token is provided
     if (!req?.body?.idToken) {
       throw new ApiError(400, "Please provide a Google ID token to continue");
     }
     const { idToken } = req.body;
+    // Verify the ID token with Google
     const ticket = await client.verifyIdToken({
       idToken,
       audience: process.env.GOOGLE_CLIENT_ID,
@@ -300,13 +333,16 @@ export const googleSignIn = async (
       email_verified,
     } = payload;
 
+    // Check if email is verified by Google
     if (!email_verified) {
       throw new ApiError(400, "Email not verified by Google");
     }
 
+    // Check if user already exists in the database
     const user = await User.findOne({ email }).session(session);
 
     if (user) {
+      // Existing user: generate tokens and manage device session
       const refreshToken = generateRefreshToken(user._id as string);
       const accessToken = generateAccessToken({
         _id: user._id as string,
@@ -317,6 +353,7 @@ export const googleSignIn = async (
         totalRestaurants: user.restaurantIds?.length || 0,
       });
 
+      // Check for existing device session for this user/device
       const deviceSession = await DeviceSession.findOne({
         userId: user._id,
         ipAddress: requestIp.getClientIp(req),
@@ -324,16 +361,19 @@ export const googleSignIn = async (
       }).session(session);
 
       if (deviceSession) {
+        // If session is revoked, deny access
         if (deviceSession.revoked) {
           throw new ApiError(
             401,
             "You don't have permission to access this account"
           );
         }
+        // Update session with new refresh token and last active time
         deviceSession.refreshToken = refreshToken;
         deviceSession.lastActiveAt = new Date();
         await deviceSession.save();
       } else {
+        // If no session, create a new device session
         await DeviceSession.create(
           [
             {
@@ -346,6 +386,7 @@ export const googleSignIn = async (
           { session }
         );
 
+        // Send new device login notification email
         const { success } = await sendEmail(
           email,
           "new-login",
@@ -357,6 +398,7 @@ export const googleSignIn = async (
             )
         );
 
+        // Create security event for new login
         await SecurityEvent.create(
           [
             {
@@ -371,9 +413,11 @@ export const googleSignIn = async (
         );
       }
 
+      // Commit transaction and end session
       await session.commitTransaction();
       session.endSession();
 
+      // Set secure cookies for tokens and send response
       const options = {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
@@ -405,6 +449,7 @@ export const googleSignIn = async (
           )
         );
     } else {
+      // New user: create user and all related records
       const user = await User.create(
         [
           {
@@ -419,6 +464,7 @@ export const googleSignIn = async (
         { session }
       );
 
+      // Generate tokens for new user
       const refreshToken = generateRefreshToken(user[0]._id as string);
       const accessToken = generateAccessToken({
         _id: user[0]._id as string,
@@ -429,6 +475,7 @@ export const googleSignIn = async (
         totalRestaurants: user[0].restaurantIds?.length || 0,
       });
 
+      // Create device session for new user
       await DeviceSession.create(
         [
           {
@@ -440,7 +487,7 @@ export const googleSignIn = async (
         ],
         { session }
       );
-
+      // Create security event for signup
       await SecurityEvent.create(
         [
           {
@@ -454,6 +501,7 @@ export const googleSignIn = async (
         { session }
       );
 
+      // Create a trial subscription for the new user
       const subscription = await Subscription.create(
         [
           {
@@ -466,6 +514,7 @@ export const googleSignIn = async (
         { session }
       );
 
+      // Create subscription history for future reference
       await SubscriptionHistory.create(
         [
           {
@@ -478,15 +527,18 @@ export const googleSignIn = async (
         { session }
       );
 
+      // Commit transaction and end session
       await session.commitTransaction();
       session.endSession();
 
+      // Send signup success email (non-blocking)
       sendEmail(
         email,
         "signup-success",
         SIGNUP_EMAIL_TEMPLATE.replace("{name}", user[0].firstName ?? "User")
       );
 
+      // 12b. Set secure cookies for tokens and send response
       const options = {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
@@ -518,6 +570,7 @@ export const googleSignIn = async (
         );
     }
   } catch (err) {
+    // Rollback transaction on error
     await session.abortTransaction();
     session.endSession();
     next(err);
