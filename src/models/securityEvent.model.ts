@@ -59,6 +59,9 @@ const securityEventSchema: Schema<SecurityEvent> = new Schema(
   }
 );
 
+// Add a TTL index to automatically delete security events older than 1 year (365 days)
+securityEventSchema.index({ createdAt: 1 }, { expireAfterSeconds: 365 * 24 * 60 * 60 }); // 1 year
+
 /**
  * Mongoose model for the SecurityEvent schema.
  */

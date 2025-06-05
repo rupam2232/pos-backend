@@ -1,7 +1,8 @@
 import { Router } from "express";
-import { googleSignin, signin, signup } from "../controllers/auth.controller.js";
+import { google, signin, signout, signup } from "../controllers/auth.controller.js";
 import { rateLimit } from 'express-rate-limit'
 import { ApiError } from "../utils/ApiError.js";
+import { verifyJWT } from "../middlewares/auth.middleware.js";
 
 const router = Router()
 
@@ -23,6 +24,7 @@ if (isProduction)router.use(limiter)
 
 router.post("/signup", signup)
 router.post("/signin", signin)
-router.post("/google", googleSignin)
+router.post("/google", google)
+router.post("/signout", verifyJWT, signout)
 
 export default router

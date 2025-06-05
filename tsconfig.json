@@ -11,6 +11,6 @@
     "rootDir": "src",                         // Source TS files root
     "noEmitOnError": true                     // Prevent emitting JS if type errors exist
   },
-  "include": ["src/**/*"],                    // Include all TS files under src
+  "include": ["src/**/*", "src/types/**/*.d.ts", "src/types/express.d.ts"],                    // Include all TS files under src
   "exclude": ["node_modules", "dist"]         // Exclude these folders
 }

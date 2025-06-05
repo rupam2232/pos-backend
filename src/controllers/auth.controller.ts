@@ -15,6 +15,7 @@ import {
   SIGNUP_EMAIL_TEMPLATE,
 } from "../utils/emailTemplates.js";
 import { OAuth2Client } from "google-auth-library";
+import { asyncHandler } from "../utils/asyncHandler.js";
 
 // Handles user registration with email/password, device/session logging, security event, and trial subscription creation. Sends welcome email and sets auth cookies.
 export const signup = async (
@@ -54,11 +55,9 @@ export const signup = async (
     const refreshToken = generateRefreshToken(user[0]._id as string);
     const accessToken = generateAccessToken({
       _id: user[0]._id as string,
-      email: user[0].email,
       role: user[0].role,
-      avatar: "",
-      firstName: "",
-      totalRestaurants: user[0].restaurantIds?.length || 0,
+      email: user[0].email,
+      restaurantIds: user[0].restaurantIds?.map((id)=> id.toString()) || [],
     });
 
     // Create device session document for security and session management
@@ -192,11 +191,10 @@ export const signin = async (
     const refreshToken = generateRefreshToken(user._id as string);
     const accessToken = generateAccessToken({
       _id: user._id as string,
-      email: user.email,
       role: user.role,
-      avatar: user.avatar || "",
+      email: user.email,
       firstName: user.firstName || "",
-      totalRestaurants: user.restaurantIds?.length || 0,
+      restaurantIds: user.restaurantIds?.map((id)=> id.toString()) || [],
     });
 
     // Check for existing device session for this user/device
@@ -298,7 +296,7 @@ export const signin = async (
 };
 
 // Handles Google OAuth sign-in and sign-up, manages device/session/subscription, logs security events, sends emails, and sets auth cookies
-export const googleSignin = async (
+export const google = async (
   req: Request,
   res: Response,
   next: NextFunction
@@ -348,9 +346,8 @@ export const googleSignin = async (
         _id: user._id as string,
         email: user.email,
         role: user.role,
-        avatar: user.avatar || "",
         firstName: user.firstName || "",
-        totalRestaurants: user.restaurantIds?.length || 0,
+        restaurantIds: user.restaurantIds?.map((id)=> id.toString()) || [],
       });
 
       // Check for existing device session for this user/device
@@ -470,9 +467,8 @@ export const googleSignin = async (
         _id: user[0]._id as string,
         email: user[0].email,
         role: user[0].role,
-        avatar: "",
         firstName: "",
-        totalRestaurants: user[0].restaurantIds?.length || 0,
+        restaurantIds: user[0].restaurantIds?.map((id)=> id.toString()) || [],
       });
 
       // Create device session for new user
@@ -576,3 +572,41 @@ export const googleSignin = async (
     next(err);
   }
 };
+
+// Handles user logout by removing refreshtoken from device session, clearing auth cookies, and sending a success response
+export const signout = asyncHandler(async (
+  req: Request,
+  res: Response
+) => {
+    // Get user ID from request which is set by authentication middleware
+    const userId = req.user?._id;
+
+    // Find and revoke device session for the user
+    await DeviceSession.findOneAndUpdate(
+      {
+        userId,
+        ipAddress: requestIp.getClientIp(req),
+        userAgent: req.header("user-agent"),
+      },
+      { $unset: { refreshToken: 1 }, $set: { lastActiveAt: new Date() } },
+      { new: true }
+    );
+
+    // cookies tokens
+    const options = {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite:
+        process.env.NODE_ENV === "production"
+          ? ("None" as "none")
+          : ("Strict" as "strict"),
+    };
+
+    // Clear auth cookies
+    res
+      .status(200)
+      .clearCookie("accessToken", options)
+      .clearCookie("refreshToken", options)
+      .json(new ApiResponse(200, null, "Logout successful"));
+}
+)

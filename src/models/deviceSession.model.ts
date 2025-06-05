@@ -60,6 +60,9 @@ const deviceSessionSchema: Schema<DeviceSession> = new Schema(
   }
 );
 
+// Add a TTL index to automatically delete sessions inactive for 60 days (2 months)
+deviceSessionSchema.index({ lastActiveAt: 1 }, { expireAfterSeconds: 60 * 24 * 60 * 60 }); // 60 days
+
 /**
  * Mongoose model for the DeviceSession schema.
  */
