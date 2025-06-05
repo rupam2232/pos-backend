@@ -9,7 +9,8 @@
     "forceConsistentCasingInFileNames": true, // Enforce consistent file name casing
     "outDir": "dist",                         // Output compiled JS files here
     "rootDir": "src",                         // Source TS files root
-    "noEmitOnError": true                     // Prevent emitting JS if type errors exist
+    "noEmitOnError": true,                     // Prevent emitting JS if type errors exist
+    "typeRoots": ["types"]
   },
   "include": ["src/**/*", "src/types/**/*.d.ts", "src/types/express.d.ts"],                    // Include all TS files under src
   "exclude": ["node_modules", "dist"]         // Exclude these folders

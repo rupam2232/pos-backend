@@ -4,7 +4,6 @@ import jwt from "jsonwebtoken"
 import { User } from "../models/user.model.js"
 import type { accessTokenUser } from "../utils/jwt.js"
 import type { User as UserType } from "../models/user.model.js";
-import type { Request } from "express";
 
 // Extend Express Request interface to include 'user'
 declare module "express-serve-static-core" {
@@ -13,7 +12,7 @@ declare module "express-serve-static-core" {
   }
 }
 
-export const verifyJWT = asyncHandler( async( req, _, next)=>{
+export const verifyJWT = asyncHandler( async( req, res, next)=>{
     try {
         const accessToken = req.cookies?.accessToken || req.header("Authorization")?.replace("Bearer ", "")
         const refreshToken = req.cookies?.refreshToken
@@ -26,8 +25,8 @@ export const verifyJWT = asyncHandler( async( req, _, next)=>{
             throw new ApiError(401, "Invalid Access Token");
         }
         const decodedToken = decoded as accessTokenUser;
-    
-        const user = await User.findById(decodedToken?._id).select("-password")
+
+        const user = await User.findById(decodedToken._id).select("-password")
     
         if(!user){ 
             throw new ApiError(401,"Invalid Access Token")
