@@ -5,6 +5,7 @@ import helmet from "helmet";
 import { ApiError } from "./utils/ApiError.js";
 import userRoute from "./routes/user.route.js";
 import authRoute from "./routes/auth.route.js";
+import restaurantRoute from "./routes/restaurant.route.js";
 
 // Create Express app instance
 const app = express();
@@ -49,6 +50,7 @@ app.use(
 
 app.use("/api/v1/user", userRoute)
 app.use("/api/v1/auth", authRoute)
+app.use("/api/v1/restaurant", restaurantRoute)
 
 // Global error handler middleware
 app.use((err: any, req: Request, res: Response, next: NextFunction) => {

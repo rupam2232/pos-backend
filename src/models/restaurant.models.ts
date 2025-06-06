@@ -71,6 +71,7 @@ const restaurantSchema: Schema<Restaurant> = new Schema(
     isTaxIncludedInPrice: {
       type: Boolean,
       required: [true, "Is tax included in price is required"],
+      default: false,
     },
     address: String,
     createdAt: {

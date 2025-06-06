@@ -5,7 +5,6 @@ export interface accessTokenUser {
   role: "admin" | "owner" | "staff";
   email: string;
   firstName?: string;
-  restaurantIds?: string[];
   [key: string]: any;
 }
 

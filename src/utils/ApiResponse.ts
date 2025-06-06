@@ -15,13 +15,14 @@ class ApiResponse<T = any> {
    * @param status - HTTP status code
    * @param data - The data payload
    * @param message - Optional message (default: "Success")
+   * @param success - Indicates if the request was successful (default: true)
    */
 
-  constructor(status: number, data: T, message: string = "Success") {
+  constructor(status: number, data: T, message: string = "Success", success: boolean = true) {
     this.status = status;
     this.data = data;
     this.message = message;
-    this.success = true;
+    this.success = success;
   }
 }
 

@@ -57,7 +57,6 @@ export const signup = async (
       _id: user[0]._id as string,
       role: user[0].role,
       email: user[0].email,
-      restaurantIds: user[0].restaurantIds?.map((id)=> id.toString()) || [],
     });
 
     // Create device session document for security and session management
@@ -194,7 +193,6 @@ export const signin = async (
       role: user.role,
       email: user.email,
       firstName: user.firstName || "",
-      restaurantIds: user.restaurantIds?.map((id)=> id.toString()) || [],
     });
 
     // Check for existing device session for this user/device
@@ -347,7 +345,6 @@ export const google = async (
         email: user.email,
         role: user.role,
         firstName: user.firstName || "",
-        restaurantIds: user.restaurantIds?.map((id)=> id.toString()) || [],
       });
 
       // Check for existing device session for this user/device
@@ -468,7 +465,6 @@ export const google = async (
         email: user[0].email,
         role: user[0].role,
         firstName: "",
-        restaurantIds: user[0].restaurantIds?.map((id)=> id.toString()) || [],
       });
 
       // Create device session for new user

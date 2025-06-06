@@ -10,6 +10,7 @@ export interface Otp extends Document {
   expiresAt: Date;
   createdAt: Date;
   updatedAt?: Date;
+  isOtpCorrect(otp: string): Promise<Boolean>;
 }
 
 /**
