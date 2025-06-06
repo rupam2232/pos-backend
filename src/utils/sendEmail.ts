@@ -24,12 +24,16 @@ const optionsArray = [
     context: "new-login",
     emailCategory: "New Login",
     subject: "New login detected",
+  }, {
+    context: "restaurant-created",
+    emailCategory: "Restaurant Created",
+    subject: "Your restaurant has been created",
   },
 ];
 
 async function sendEmail(
   email: string,
-  context: "signup" | "signup-success" | "change-password" | "new-login",
+  context: "signup" | "signup-success" | "change-password" | "new-login" | "restaurant-created",
   template: string,
 ): Promise<T> {
   try {
