@@ -10,7 +10,7 @@ export const createRestaurant = asyncHandler(async (req, res) => {
   if (!req.body?.restaurantName || !req.body?.slug) {
     throw new ApiError(400, "Restaurant name and slug are required.");
   }
-  const { restaurantName, slug, description, address } = req.body;
+  const { restaurantName, slug, description, address, logoUrl } = req.body;
   const ownerId = req.user!._id;
   //   const logoLocalPath = req.file?.path;
   if (req.user!.role !== "owner") {
@@ -25,24 +25,17 @@ export const createRestaurant = asyncHandler(async (req, res) => {
     description,
     address,
     ownerId,
+    logoUrl
   });
   if (!restaurant) {
     throw new ApiError(500, "Failed to create restaurant.");
   }
-  // If logo is uploaded, set the logoUrl
-  // if (logoLocalPath) {
-  //   const logoUrl = `${process.env.BASE_URL}/uploads/${req.file?.filename}`;
-  //   restaurant.logoUrl = logoUrl;
-
-  //   await restaurant.save({validateBeforeSave: false});
-  // }
-  // Add the restaurant to the user's ownedRestaurants array
-
+  
   req.user!.restaurantIds!.push(restaurant._id as any); // Type assertion to avoid TS error
   // Ensure the restaurantIds array is unique
   req.user!.restaurantIds = Array.from(new Set(req.user!.restaurantIds));
   // Save the user without validation to avoid triggering validation errors
-  req.user!.save({ validateBeforeSave: false });
+  await req.user!.save({ validateBeforeSave: false });
 
   sendEmail(
     req.user!.email,

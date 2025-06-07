@@ -8,7 +8,7 @@ const router = Router();
 
 const createlimit = rateLimit({
   windowMs: 60 * 1000, // 1 minutes
-  limit: 2, // Limit each IP to 3 requests per `window` (here, per 1 minutes).
+  limit: 1, // Limit each IP to 1 requests per `window` (here, per 1 minutes).
   standardHeaders: "draft-8", //draft-8: `RateLimit` header
   legacyHeaders: false, // Disable the `X-RateLimit-*` headers.
   handler: () => {

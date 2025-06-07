@@ -45,7 +45,17 @@ const restaurantSchema: Schema<Restaurant> = new Schema(
         message: "Short name (slug) must be 3-8 characters",
       },
     },
-    logoUrl: String,
+    logoUrl: {
+      type: String,
+      unique: true,
+      sparse: true,
+      validate: {
+        validator: function (url: string) {
+          return !url || /^https?:\/\/.+\.(jpg|jpeg|png)$/.test(url);
+        },
+        message: "Logo URL must be a valid image URL",
+      },
+    },
     description: String,
     isCurrentlyOpen: {
       type: Boolean,
