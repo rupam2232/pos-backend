@@ -17,7 +17,7 @@ export const createRestaurant = asyncHandler(async (req, res) => {
     throw new ApiError(403, "Only owners can create restaurants.");
   }
 
-  await canCreateRestaurant(ownerId!.toString());
+  await canCreateRestaurant(req.user!);
 
   const restaurant = await Restaurant.create({
     restaurantName,
