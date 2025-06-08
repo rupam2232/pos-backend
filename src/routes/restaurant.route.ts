@@ -1,6 +1,15 @@
 import { Router } from "express";
-import { verifyJWT } from "../middlewares/auth.middleware.js";
-import { createRestaurant } from "../controllers/restaurant.controller.js";
+import { verifyAuth } from "../middlewares/auth.middleware.js";
+import {
+  checkUniqueRestaurantSlug,
+  createRestaurant,
+  createRestaurantCategories,
+  getRestaurantBySlug,
+  removeRestaurantCategories,
+  setRestaurantTax,
+  toggleRestaurantOpenStatus,
+  updateRestaurantDetails,
+} from "../controllers/restaurant.controller.js";
 import { rateLimit } from "express-rate-limit";
 import { ApiError } from "../utils/ApiError.js";
 
@@ -18,7 +27,29 @@ const createlimit = rateLimit({
 
 const isProduction = process.env?.NODE_ENV === "production";
 
-router.post("/create", isProduction? createlimit : (req, res, next)=> next(), verifyJWT, createRestaurant);
+router.post(
+  "/create",
+  isProduction ? createlimit : (req, res, next) => next(),
+  verifyAuth,
+  createRestaurant
+);
 
+router
+  .route("/:slug")
+  .get(getRestaurantBySlug)
+  .patch(verifyAuth, updateRestaurantDetails);
+router.post(
+  "/:slug/toggle-open-status",
+  verifyAuth,
+  toggleRestaurantOpenStatus
+);
+router
+  .route("/:slug/categories")
+  .post(verifyAuth, createRestaurantCategories)
+  .patch(verifyAuth, removeRestaurantCategories);
+
+router.post("/:slug/tax", verifyAuth, setRestaurantTax);
+
+router.get("/:slug/isUniqueSlug", verifyAuth, checkUniqueRestaurantSlug);
 
 export default router;

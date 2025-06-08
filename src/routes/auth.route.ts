@@ -7,7 +7,7 @@ import {
 } from "../controllers/auth.controller.js";
 import { rateLimit } from "express-rate-limit";
 import { ApiError } from "../utils/ApiError.js";
-import { verifyJWT } from "../middlewares/auth.middleware.js";
+import { verifyAuth } from "../middlewares/auth.middleware.js";
 import { verifyOtp } from "../middlewares/verifyOtp.middleare.js";
 
 const router = Router();
@@ -30,6 +30,6 @@ if (isProduction) router.use(limiter);
 router.post("/signup",  signup);
 router.post("/signin", signin);
 router.post("/google", google);
-router.post("/signout", verifyJWT, signout);
+router.post("/signout", verifyAuth, signout);
 
 export default router;

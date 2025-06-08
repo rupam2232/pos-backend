@@ -15,7 +15,7 @@ declare module "express-serve-static-core" {
   }
 }
 
-export const verifyJWT = asyncHandler(async (req, res, next) => {
+export const verifyAuth = asyncHandler(async (req, res, next) => {
   const accessToken =
     req.cookies?.accessToken ||
     req.header("Authorization")?.replace("Bearer ", "");

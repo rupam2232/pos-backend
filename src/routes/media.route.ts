@@ -3,7 +3,7 @@ import {
   restaurantLogoDelete,
   restaurantLogoUpload,
 } from "../controllers/media.controller.js";
-import { verifyJWT } from "../middlewares/auth.middleware.js";
+import { verifyAuth } from "../middlewares/auth.middleware.js";
 import { upload } from "../middlewares/multer.middleware.js";
 import rateLimit from "express-rate-limit";
 import { ApiError } from "../utils/ApiError.js";
@@ -25,10 +25,10 @@ router
   .route("/restaurant-logo")
   .post(
     isProduction ? restaurantLogo : (req, res, next) => next(),
-    verifyJWT,
+    verifyAuth,
     upload.single("restaurantLogo"),
     restaurantLogoUpload
   )
-  .delete(verifyJWT, restaurantLogoDelete);
+  .delete(verifyAuth, restaurantLogoDelete);
 
 export default router;
