@@ -1,9 +1,12 @@
+import path from "path";
+import fs from "fs";
+import cloudinary from "../utils/cloudinary.js";
 import { Restaurant } from "../models/restaurant.models.js";
 import { canCreateRestaurant } from "../service/restaurant.service.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
-import { RESTAURANT_CREATED_TEMPLATE } from "../utils/emailTemplates.js";
+import { restaurantCreatedTemplate } from "../utils/emailTemplates.js";
 import sendEmail from "../utils/sendEmail.js";
 
 export const createRestaurant = asyncHandler(async (req, res) => {
@@ -40,14 +43,13 @@ export const createRestaurant = asyncHandler(async (req, res) => {
   sendEmail(
     req.user!.email,
     "restaurant-created",
-    RESTAURANT_CREATED_TEMPLATE.replaceAll(
-      "{restaurantName}",
-      restaurant.restaurantName
+    restaurantCreatedTemplate(
+      req.user!.firstName ?? "User",
+      restaurant.restaurantName,
+      restaurant.slug,
+      restaurant.description ?? "Not defined",
+      restaurant.address ?? "Not defined"
     )
-      .replace("{name}", req.user!.firstName ?? "User")
-      .replace("{slug}", restaurant.slug)
-      .replace("{description}", restaurant.description ?? "Not defined")
-      .replace("{address}", restaurant.address ?? "Not defined")
   );
   res
     .status(201)
@@ -89,7 +91,6 @@ export const updateRestaurantDetails = asyncHandler(async (req, res) => {
     newSlug,
     description,
     address,
-    logoUrl,
     openingTime,
     closingTime,
   } = req.body;
@@ -113,14 +114,6 @@ export const updateRestaurantDetails = asyncHandler(async (req, res) => {
     }
   }
 
-  if(logoUrl && typeof logoUrl !== "string") {
-    throw new ApiError(400, "logoUrl must be a string.");
-  }
-
-  if(logoUrl && (new URL(logoUrl)?.origin !== process.env.MEDIA_ORIGIN || new URL(logoUrl)?.pathname?.split("/")[1] !== process.env.MEDIA_PATH_NAME)) {
-    throw new ApiError(400, "logoUrl must be a valid URL.");
-  }
-
   const restaurant = await Restaurant.findOneAndUpdate(
     { slug, ownerId: req.user!._id },
     {
@@ -129,7 +122,6 @@ export const updateRestaurantDetails = asyncHandler(async (req, res) => {
         slug: newSlug,
         description: description ? description : null,
         address: address ? address : null,
-        logoUrl: logoUrl ? logoUrl : null,
         openingTime: openingTime ? openingTime : null,
         closingTime: closingTime ? closingTime : null,
       },
@@ -288,7 +280,7 @@ export const setRestaurantTax = asyncHandler(async (req, res) => {
 
 export const checkUniqueRestaurantSlug = asyncHandler(async (req, res) => {
   if (!req.params?.slug) {
-    throw new ApiError(400, "Restaurant slug is required.");
+    throw new ApiError(400, "Restaurant slug is required");
   }
   const { slug } = req.params;
 
@@ -302,4 +294,65 @@ export const checkUniqueRestaurantSlug = asyncHandler(async (req, res) => {
       .status(200)
       .json(new ApiResponse(200, true, `${slug} slug is unique and available`));
   }
+});
+
+export const updateRestaurantLogo = asyncHandler(async (req, res) => {
+  const logoLocalPath = req.file?.path;
+
+  if (!req.params?.slug) {
+    if (logoLocalPath) fs.unlinkSync(logoLocalPath); // Remove the file if slug is not provided
+    throw new ApiError(400, "Restaurant slug is required");
+  }
+
+  const { slug } = req.params;
+
+  if (req.user!.role !== "owner") {
+    if (logoLocalPath) fs.unlinkSync(logoLocalPath); // Remove the file if the user is not an owner
+    throw new ApiError(403, "Only owners can upload restaurant logos");
+  }
+
+  // Check file type
+  if (logoLocalPath) {
+    const filetypes = /jpeg|jpg|png/;
+    const extname = filetypes.test(
+      path.extname(req.file!.originalname).toLowerCase()
+    );
+    const mimetype = filetypes.test(req.file!.mimetype);
+
+    if (!mimetype || !extname) {
+      fs.unlinkSync(logoLocalPath); // Remove the file if it's not valid
+      throw new ApiError(400, "Only JPEG, JPG, and PNG files are allowed");
+    }
+  }
+
+  // Check if the restaurant exists and the user is the owner
+  const restaurant = await Restaurant.findOne({ slug, ownerId: req.user!._id });
+  if (!restaurant) {
+    if (logoLocalPath) fs.unlinkSync(logoLocalPath); // Remove the file if restaurant is not found
+    throw new ApiError(404, "Restaurant not found or you are not the owner");
+  }
+  let uploadResponse = null;
+  // If a logoLocalPath exists, upload the logo to Cloudinary
+  if (logoLocalPath) {
+    uploadResponse = await cloudinary.upload(
+      logoLocalPath,
+      `restaurant-logos/restaurants-${req.user!._id}` // Use the owner's ID to create a unique folder
+    );
+    if (!uploadResponse || !uploadResponse.secure_url) {
+      fs.unlinkSync(logoLocalPath); // Remove the file if upload fails
+      throw new ApiError(500, "Failed to upload logo to Cloudinary");
+    }
+  }
+  if (restaurant.logoUrl) {
+    // Delete the old logo from Cloudinary if it exists
+    await cloudinary.delete(restaurant.logoUrl);
+  }
+  restaurant.logoUrl = uploadResponse?.secure_url ?? undefined; // Update the logoUrl with the new one
+  await restaurant.save();
+
+  res
+    .status(200)
+    .json(
+      new ApiResponse(200, restaurant, "Restaurant logo updated successfully")
+    );
 });

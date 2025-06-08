@@ -11,7 +11,7 @@ import { generateAccessToken, generateRefreshToken } from "../utils/jwt.js";
 import { Subscription } from "../models/subscription.model.js";
 import { SubscriptionHistory } from "../models/subscriptionHistory.model.js";
 import sendEmail from "../utils/sendEmail.js";
-import { SIGNUP_EMAIL_TEMPLATE } from "../utils/emailTemplates.js";
+// import { SIGNUP_EMAIL_TEMPLATE } from "../utils/emailTemplates.js";
 
 export const signup = async (
   req: Request,
@@ -96,7 +96,7 @@ export const signup = async (
     await session.commitTransaction();
     session.endSession();
 
-    sendEmail(email, "signup-success", SIGNUP_EMAIL_TEMPLATE.replace("{name}", user[0].firstName ?? "User"))
+    // sendEmail(email, "signup-success", SIGNUP_EMAIL_TEMPLATE.replace("{name}", user[0].firstName ?? "User"))
 
     const options = {
       httpOnly: true,

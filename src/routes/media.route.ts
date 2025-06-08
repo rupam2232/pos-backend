@@ -9,7 +9,7 @@ import rateLimit from "express-rate-limit";
 import { ApiError } from "../utils/ApiError.js";
 const router = Router();
 
-const restaurantLogo = rateLimit({
+const restaurantLogoLimit = rateLimit({
   windowMs: 60 * 1000, // 1 minutes
   limit: 2, // Limit each IP to 2 requests per `window` (here, per 1 minutes).
   standardHeaders: "draft-8", //draft-8: `RateLimit` header
@@ -24,7 +24,7 @@ const isProduction = process.env?.NODE_ENV === "production";
 router
   .route("/restaurant-logo")
   .post(
-    isProduction ? restaurantLogo : (req, res, next) => next(),
+    isProduction ? restaurantLogoLimit : (req, res, next) => next(),
     verifyAuth,
     upload.single("restaurantLogo"),
     restaurantLogoUpload

@@ -11,8 +11,8 @@ import { Subscription } from "../models/subscription.model.js";
 import { SubscriptionHistory } from "../models/subscriptionHistory.model.js";
 import sendEmail from "../utils/sendEmail.js";
 import {
-  NEW_LOGIN_DEVICE_TEMPLATE,
-  SIGNUP_EMAIL_TEMPLATE,
+  newLoginDeviceTemplate,
+  signupEmailTemplate
 } from "../utils/emailTemplates.js";
 import { OAuth2Client } from "google-auth-library";
 import { asyncHandler } from "../utils/asyncHandler.js";
@@ -120,7 +120,7 @@ export const signup = async (
     sendEmail(
       email,
       "signup-success",
-      SIGNUP_EMAIL_TEMPLATE.replace("{name}", user[0].firstName ?? "User")
+      signupEmailTemplate(user[0].firstName ?? "User")
     );
 
     // Set secure cookies and send response
@@ -231,9 +231,7 @@ export const signin = async (
       const { success } = await sendEmail(
         email,
         "new-login",
-        NEW_LOGIN_DEVICE_TEMPLATE.replace("{name}", user.firstName ?? "User")
-          .replace("{ipAddress}", requestIp.getClientIp(req) || "Unknown IP")
-          .replace("{device}", req.header("user-agent") || "Unknown User Agent")
+        newLoginDeviceTemplate(user.firstName ?? "User", req.header("user-agent") || "Unknown Device", requestIp.getClientIp(req) || "Unknown IP")
       );
 
       // Log security event for new login
@@ -384,12 +382,7 @@ export const google = async (
         const { success } = await sendEmail(
           email,
           "new-login",
-          NEW_LOGIN_DEVICE_TEMPLATE.replace("{name}", user.firstName ?? "User")
-            .replace("{ipAddress}", requestIp.getClientIp(req) || "Unknown IP")
-            .replace(
-              "{device}",
-              req.header("user-agent") || "Unknown User Agent"
-            )
+          newLoginDeviceTemplate(user.firstName ?? "User", req.header("user-agent") || "Unknown Device", requestIp.getClientIp(req) || "Unknown IP")
         );
 
         // Create security event for new login
@@ -527,7 +520,7 @@ export const google = async (
       sendEmail(
         email,
         "signup-success",
-        SIGNUP_EMAIL_TEMPLATE.replace("{name}", user[0].firstName ?? "User")
+        signupEmailTemplate(user[0].firstName ?? "User")
       );
 
       // 12b. Set secure cookies for tokens and send response

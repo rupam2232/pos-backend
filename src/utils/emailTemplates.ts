@@ -1,4 +1,8 @@
-export const VERIFICATION_EMAIL_TEMPLATE = `
+export const verificationEmailTemplate = (
+  name: string,
+  verificationCode: number
+): string => {
+  return `
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -11,10 +15,10 @@ export const VERIFICATION_EMAIL_TEMPLATE = `
     <h1 style="color: white; margin: 0;">Verify Your Email</h1>
   </div>
   <div style="background-color: #f9f9f9; padding: 20px; border-radius: 0 0 5px 5px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
-    <p>Hello, {name}</p>
+    <p>Hello, ${name}</p>
     <p>Thank you for signing up! Your verification code is:</p>
     <div style="text-align: center; margin: 30px 0;">
-      <span style="font-size: 32px; font-weight: bold; letter-spacing: 5px; color: #4CAF50;">{verificationCode}</span>
+      <span style="font-size: 32px; font-weight: bold; letter-spacing: 5px; color: #4CAF50;">${verificationCode}</span>
     </div>
     <p>Enter this code on the verification page to complete your registration.</p>
     <p>This code will expire in 5 minutes for security reasons.</p>
@@ -27,8 +31,13 @@ export const VERIFICATION_EMAIL_TEMPLATE = `
 </body>
 </html>
 `;
+};
 
-export const EMAIL_RESET_SUCCESS_TEMPLATE = `
+export const emailResetSuccessTemplate = (
+  name: string,
+  email: string
+): string => {
+  return `
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -41,8 +50,8 @@ export const EMAIL_RESET_SUCCESS_TEMPLATE = `
     <h1 style="color: white; margin: 0;">Email Reset Successful</h1>
   </div>
   <div style="background-color: #f9f9f9; padding: 20px; border-radius: 0 0 5px 5px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
-    <p>Hello, {name}</p>
-    <p>We're writing this to confirm that your email has been successfully reset to <span  style="text-decoration: none; color: black; pointer-events: none;">{email} </span>.</p>
+    <p>Hello, ${name}</p>
+    <p>We're writing this to confirm that your email has been successfully reset to <span  style="text-decoration: none; color: black; pointer-events: none;">${email} </span>.</p>
     <div style="text-align: center; margin: 30px 0;">
       <div style="background-color: #4CAF50; color: white; width: 50px; height: 50px; line-height: 50px; border-radius: 50%; display: inline-block; font-size: 30px;">
         ✓
@@ -63,8 +72,10 @@ export const EMAIL_RESET_SUCCESS_TEMPLATE = `
 </body>
 </html>
 `;
+};
 
-export const PASSWORD_RESET_SUCCESS_TEMPLATE = `
+export const passwordResetSuccessTemplate = (name: string): string => {
+  return `
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -77,7 +88,7 @@ export const PASSWORD_RESET_SUCCESS_TEMPLATE = `
     <h1 style="color: white; margin: 0;">Password Reset Successful</h1>
   </div>
   <div style="background-color: #f9f9f9; padding: 20px; border-radius: 0 0 5px 5px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
-    <p>Hello, {name}</p>
+    <p>Hello, ${name}</p>
     <p>We're writing this to confirm that your password has been successfully reset.</p>
     <div style="text-align: center; margin: 30px 0;">
       <div style="background-color: #4CAF50; color: white; width: 50px; height: 50px; line-height: 50px; border-radius: 50%; display: inline-block; font-size: 30px;">
@@ -99,8 +110,13 @@ export const PASSWORD_RESET_SUCCESS_TEMPLATE = `
 </body>
 </html>
 `;
+};
 
-export const PASSWORD_RESET_REQUEST_TEMPLATE = `
+export const passwordResetRequestTemplate = (
+  name: string,
+  verificationCode: number
+): string => {
+  return `
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -113,11 +129,11 @@ export const PASSWORD_RESET_REQUEST_TEMPLATE = `
     <h1 style="color: white; margin: 0;">Reset Password</h1>
   </div>
   <div style="background-color: #f9f9f9; padding: 20px; border-radius: 0 0 5px 5px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
-    <p>Hello, {name}</p>
+    <p>Hello, ${name}</p>
     <p>We received a request to reset your password. If you didn't make this request, we suggest you to change your password immediately.</p>
     <p>Your OTP is</p>
     <div style="text-align: center; margin: 30px 0;">
-      <p style="font-size: 32px; font-weight: bold; letter-spacing: 5px; color: #4CAF50;">{verificationCode}</p>
+      <p style="font-size: 32px; font-weight: bold; letter-spacing: 5px; color: #4CAF50;">${verificationCode}</p>
     </div>
     <p>This OTP will expire in 5 minutes for security reasons.</p>
     <p>Best regards,<br>Team ${process.env.SERVER_NAME}</p>
@@ -128,8 +144,10 @@ export const PASSWORD_RESET_REQUEST_TEMPLATE = `
 </body>
 </html>
 `;
+};
 
-export const SIGNUP_EMAIL_TEMPLATE = `
+export const signupEmailTemplate = (name: string): string => {
+  return `
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
@@ -587,7 +605,7 @@ export const SIGNUP_EMAIL_TEMPLATE = `
                   <tr>
                     <td class="content-cell">
                       <div class="f-fallback">
-                        <h1>Welcome, {name}!</h1>
+                        <h1>Welcome, ${name}!</h1>
                         <p>Thanks for Signing up. We’re thrilled to have you on board.:</p>
                         <!-- Action -->
                         <p>Thanks,
@@ -605,10 +623,15 @@ export const SIGNUP_EMAIL_TEMPLATE = `
     </table>
   </body>
 </html>
-`
+`;
+};
 
-export const NEW_LOGIN_DEVICE_TEMPLATE = `
-<!DOCTYPE html>
+export const newLoginDeviceTemplate = (
+  name: string,
+  device: string,
+  ipAddress: string
+): string => {
+  return `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -620,10 +643,10 @@ export const NEW_LOGIN_DEVICE_TEMPLATE = `
     <h1 style="color: white; margin: 0;">New Login Alert</h1>
   </div>
   <div style="background-color: #f9f9f9; padding: 20px; border-radius: 0 0 5px 5px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
-    <p>Hello {name},</p>
+    <p>Hello ${name},</p>
     <p>We noticed a new login to your account from a device that we don't recognize.</p>
-    <p><strong>Device:</strong> {device}</p>
-    <p><strong>IP Address:</strong> {ipAddress}</p>
+    <p><strong>Device:</strong> ${device}</p>
+    <p><strong>IP Address:</strong> ${ipAddress}</p>
     <p>If this was you, you can ignore this message. If not, please secure your account immediately.</p>
     <p>Best regards,<br>Team ${process.env.SERVER_NAME}</p>
   </div>
@@ -633,8 +656,16 @@ export const NEW_LOGIN_DEVICE_TEMPLATE = `
 </body>
 </html>
 `;
+};
 
-export const RESTAURANT_CREATED_TEMPLATE = `
+export const restaurantCreatedTemplate = (
+  name: string,
+  restaurantName: string,
+  slug: string,
+  description: string,
+  address: string
+): string => {
+  return `
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -647,14 +678,14 @@ export const RESTAURANT_CREATED_TEMPLATE = `
     <h1 style="color: white; margin: 0;">Restaurant Created</h1>
   </div>
   <div style="background-color: #f9f9f9; padding: 20px; border-radius: 0 0 5px 5px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
-    <p>Hello {name},</p>
-    <p>Your restaurant <strong>{restaurantName}</strong> has been created successfully!</p>
+    <p>Hello ${name},</p>
+    <p>Your restaurant <strong>${restaurantName}</strong> has been created successfully!</p>
     <p>Here are the details:</p>
     <ul>
-      <li><strong>Restaurant Name:</strong> {restaurantName}</li>
-      <li><strong>Slug:</strong> {slug}</li>
-      <li><strong>Description:</strong> {description}</li>
-      <li><strong>Address:</strong> {address}</li>
+      <li><strong>Restaurant Name:</strong> ${restaurantName}</li>
+      <li><strong>Slug:</strong> ${slug}</li>
+      <li><strong>Description:</strong> ${description}</li>
+      <li><strong>Address:</strong> ${address}</li>
     </ul>
     <p>You can now manage your restaurant and start serving customers.</p>
     <p>Best regards,<br>Team ${process.env.SERVER_NAME}</p>
@@ -663,5 +694,5 @@ export const RESTAURANT_CREATED_TEMPLATE = `
     <p>This is an automated message, please do not reply to this email.</p>
   </div>
 </body>
-</html>
-`;
+</html`;
+};
