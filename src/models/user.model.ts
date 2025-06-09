@@ -57,12 +57,6 @@ const userSchema: Schema<User> = new Schema(
       type: [Schema.Types.ObjectId],
       ref: "Restaurant",
       default: [],
-      validate: {
-        validator: function (arr: any[]) {
-          return arr.length <= 4;
-        },
-        message: "You can only create maximum 4 restaurants",
-      },
     },
     oauthProvider: {
       type: String,

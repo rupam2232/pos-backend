@@ -1,29 +1,27 @@
 import { nanoid } from "nanoid";
-import { Restaurant } from "../models/restaurant.models";
-import { Table } from "../models/table.model";
-import { canCreateTable } from "../service/table.service";
-import { ApiError } from "../utils/ApiError";
-import { ApiResponse } from "../utils/ApiResponse";
-import { asyncHandler } from "../utils/asyncHandler";
+import { Restaurant } from "../models/restaurant.models.js";
+import { Table } from "../models/table.model.js";
+import { canCreateTable } from "../service/table.service.js";
+import { ApiError } from "../utils/ApiError.js";
+import { ApiResponse } from "../utils/ApiResponse.js";
+import { asyncHandler } from "../utils/asyncHandler.js";
+import { isValidObjectId } from "mongoose";
 
 export const createTable = asyncHandler(async (req, res) => {
-  if (!req.body.restaurantId || !req.body.tableName) {
-    throw new ApiError(
-      400,
-      "restaurantId and tableName are required."
-    );
+  if (!req.body || !req.body.restaurantId || !req.body.tableName) {
+    throw new ApiError(400, "restaurantId and tableName are required");
   }
 
   const { restaurantId, tableName, seatCount } = req.body;
   const user = req.user;
   if (user!.role !== "owner") {
-    throw new ApiError(403, "You do not have permission to create a table.");
+    throw new ApiError(403, "You do not have permission to create a table");
   }
 
   if (user!.restaurantIds!.length === 0) {
     throw new ApiError(
       403,
-      "You do not have any restaurants to create a table for."
+      "You do not have any restaurants to create a table for"
     );
   }
   const restaurant = Restaurant.findOne({
@@ -33,7 +31,7 @@ export const createTable = asyncHandler(async (req, res) => {
   if (!restaurant) {
     throw new ApiError(
       404,
-      "Restaurant not found or you do not own this restaurant."
+      "Restaurant not found or you do not own this restaurant"
     );
   }
 
@@ -50,7 +48,7 @@ export const createTable = asyncHandler(async (req, res) => {
         restaurantId,
         tableName,
         qrSlug,
-        seatCount
+        seatCount,
       });
       break; // Success, exit loop
     } catch (err: any) {
@@ -64,11 +62,203 @@ export const createTable = asyncHandler(async (req, res) => {
       throw err;
     }
   }
-  
+
   if (!table) {
-    throw new ApiError(500, "Failed to create table. Please try again.");
+    throw new ApiError(500, "Failed to create table. Please try again");
   }
   res
     .status(201)
     .json(new ApiResponse(201, table, "Table created successfully"));
+});
+
+export const updateTable = asyncHandler(async (req, res) => {
+  if (!req.body || !req.body.tableName || req.body.seatCount === undefined) {
+    throw new ApiError(400, "tableName and seatCount is required");
+  }
+  if (!req.params || !req.params.tableId) {
+    throw new ApiError(400, "tableId is required");
+  }
+  const tableId = req.params.tableId;
+
+  if (!isValidObjectId(tableId)) {
+    throw new ApiError(400, "Invalid tableId format");
+  }
+
+  const { tableName, seatCount } = req.body;
+  const user = req.user;
+
+  if (user!.role !== "owner") {
+    throw new ApiError(403, "You do not have permission to update a table");
+  }
+
+  if (user!.restaurantIds!.length === 0) {
+    throw new ApiError(
+      403,
+      "You do not have any restaurants to update a table for"
+    );
+  }
+
+  const table = await Table.findOneAndUpdate(
+    { _id: tableId, restaurantId: { $in: user!.restaurantIds } },
+    { $set: { tableName, seatCount } },
+    { new: true }
+  );
+
+  if (!table) {
+    throw new ApiError(404, "Table not found or you do not own this table");
+  }
+
+  res
+    .status(200)
+    .json(new ApiResponse(200, table, "Table updated successfully"));
+});
+
+export const toggleOccupiedStatus = asyncHandler(async (req, res) => {
+  if (!req.params || !req.params.tableId) {
+    throw new ApiError(400, "tableId is required");
+  }
+  const tableId = req.params.tableId;
+
+  if (!isValidObjectId(tableId)) {
+    throw new ApiError(400, "Invalid tableId format");
+  }
+
+  const user = req.user;
+
+  if (user!.restaurantIds!.length === 0) {
+    throw new ApiError(
+      403,
+      "You do not have any restaurant associated with your account to update table status"
+    );
+  }
+
+  if (user!.role !== "owner") {
+    const restaurant = await Restaurant.findOne({
+      _id: { $in: user!.restaurantIds },
+      staffIds: user!._id,
+    });
+    if (!restaurant) {
+      throw new ApiError(
+        403,
+        "You do not have permission to update table status"
+      );
+    }
+  }
+
+  const table = await Table.findOne({
+    _id: tableId,
+    restaurantId: { $in: user!.restaurantIds },
+  });
+
+  if (!table) {
+    throw new ApiError(
+      404,
+      "Table not found or you do not have permission to update this table"
+    );
+  }
+
+  if (table.isOccupied && table.currentOrderId) {
+    throw new ApiError(
+      400,
+      "Cannot toggle occupied status while an order is active"
+    );
+  }
+
+  table.isOccupied = !table.isOccupied;
+  await table.save({ validateBeforeSave: false });
+
+  res
+    .status(200)
+    .json(
+      new ApiResponse(200, table, "Table occupied status updated successfully")
+    );
+});
+
+export const getTableBySlug = asyncHandler(async (req, res) => {
+  if (!req.params || !req.params.qrSlug || !req.params.restaurantSlug) {
+    throw new ApiError(400, "qr slug and restaurant slug is required");
+  }
+  const { qrSlug, restaurantSlug } = req.params;
+  const restaurant = await Restaurant.findOne({ slug: restaurantSlug });
+
+  if (!restaurant) {
+    throw new ApiError(404, "Restaurant not found");
+  }
+
+  let canViewOrder = false;
+  if (req.user) {
+    // If user is authenticated, check if they are the owner or staff of the restaurant
+    if (
+      req.user.role === "owner" &&
+      restaurant.ownerId === req.user!._id
+    ) {
+      canViewOrder = true;
+    } else if (
+      req.user.role === "staff"
+    ) {
+      canViewOrder = true;
+    }
+  }
+  // if(req.user.!_id)
+console.log(canViewOrder, req.user?._id as string, restaurant.ownerId, restaurant.staffIds);
+  const table = await Table.aggregate([
+    {
+      $match: {
+        qrSlug,
+        restaurantId: restaurant._id,
+      },
+    },
+    {
+      $lookup: {
+        from: "restaurants",
+        localField: "restaurantId",
+        foreignField: "_id",
+        as: "restaurantDetails",
+      },
+    },
+    { $unwind: "$restaurantDetails" },
+    {
+      $lookup: {
+        from: "orders",
+        localField: "currentOrderId",
+        foreignField: "_id",
+        as: "currentOrder",
+      },
+    },
+    {
+      $unwind: {
+        path: "$currentOrder",
+        preserveNullAndEmptyArrays: true, // In case there's no current order
+      },
+    },
+    {
+      $project: {
+        tableName: 1,
+        seatCount: 1,
+        isOccupied: 1,
+        qrSlug: 1,
+        currentOrderId: 1,
+        currentOrder: canViewOrder
+          ? {
+              status: "$currentOrder.status",
+              finalAmount: "$currentOrder.finalAmount",
+              foodItems: "$currentOrder.foodItems",
+            }
+          : "$$REMOVE",
+        restaurantDetails: {
+          restaurantName: "$restaurantDetails.restaurantName",
+          address: "$restaurantDetails.address",
+          slug: "$restaurantDetails.slug",
+        },
+      },
+    },
+  ]);
+
+  if (!table || table.length === 0) {
+    throw new ApiError(404, "Table not found");
+  }
+
+  res
+    .status(200)
+    .json(new ApiResponse(200, table[0], "Table details fetched successfully"));
 });

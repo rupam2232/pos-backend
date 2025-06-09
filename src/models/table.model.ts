@@ -30,6 +30,9 @@ const tableSchema: Schema<Table> = new Schema(
     tableName: {
       type: String,
       required: [true, "Table name is required"],
+      trim: true,
+      minlength: [1, "Table name must be at least 1 character"],
+      maxlength: [50, "Table name cannot exceed 50 characters"],
     },
     qrSlug: {
       type: String,

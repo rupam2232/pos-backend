@@ -12,6 +12,7 @@ export interface Restaurant extends Document {
   description?: string; // Optional description of the restaurant
   isCurrentlyOpen: boolean; // Whether the restaurant is currently open
   ownerId: Types.ObjectId; // Reference to the User who owns the restaurant
+  staffIds?: Types.ObjectId[]; // Optional array of User IDs for staff members
   categories?: string[]; // Optional array of categories/cuisines
   openingTime?: string; // Optional opening time (e.g., "09:00")
   closingTime?: string; // Optional closing time (e.g., "22:00")
@@ -66,6 +67,11 @@ const restaurantSchema: Schema<Restaurant> = new Schema(
       type: Schema.Types.ObjectId,
       ref: "User",
       required: [true, "Id of the owner is required"],
+    },
+    staffIds: {
+      type: [Schema.Types.ObjectId],
+      ref: "User",
+      default: [],
     },
     categories: {
       type: [String],
