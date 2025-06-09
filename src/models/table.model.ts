@@ -9,6 +9,7 @@ export interface Table extends Document {
   restaurantId: Types.ObjectId; // Reference to the Restaurant
   tableName: string; // Name/label of the table
   qrSlug: string; // Unique slug for QR code mapping
+  seatCount: number; // Number of seats at the table
   isOccupied: boolean; // Whether the table is currently occupied
   currentOrderId?: Types.ObjectId; // Reference to the current Order (if any)
   createdAt: Date; // Timestamp when the document was first created (set automatically, never changes)
@@ -34,9 +35,17 @@ const tableSchema: Schema<Table> = new Schema(
       type: String,
       required: [true, "A unique slug is required"],
     },
+    seatCount: {
+      type: Number,
+      required: [true, "Seat count is required"],
+      default: 1,
+      min: [1, "Seat count must be at least 1"],
+      max: [100, "Seat count cannot exceed 100"],
+    },
     isOccupied: {
       type: Boolean,
       required: [true, "Is occupied field is required"],
+      default: false,
     },
     currentOrderId: {
       type: Schema.Types.ObjectId,
