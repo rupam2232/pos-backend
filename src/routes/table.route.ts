@@ -36,15 +36,17 @@ const occupiedStatusUpdateLimit = rateLimit({
 
 const isProduction = process.env?.NODE_ENV === "production";
 
-router.post(
-  "/create",
-  isProduction ? createLimit : (req, res, next) => next(),
-  verifyAuth,
-  createTable
-);
+router
+  .route("/:restaurantSlug")
+  .get(verifyAuth, getAllTablesOfRestaurant)
+  .post(
+    isProduction ? createLimit : (req, res, next) => next(),
+    verifyAuth,
+    createTable
+  );
 
 router.post(
-  "/toggle-occupied-status/:tableId",
+  "/:restaurantSlug/:qrSlug/toggle-occupied",
   isProduction ? occupiedStatusUpdateLimit : (req, res, next) => next(),
   verifyAuth,
   toggleOccupiedStatus
@@ -55,7 +57,5 @@ router
   .get(verifyOptionalAuth, getTableBySlug)
   .patch(verifyAuth, updateTable)
   .delete(verifyAuth, deleteTable);
-
-router.get("/:restaurantSlug", verifyAuth, getAllTablesOfRestaurant);
 
 export default router;
