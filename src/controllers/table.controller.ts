@@ -75,14 +75,11 @@ export const updateTable = asyncHandler(async (req, res) => {
   if (!req.body || !req.body.tableName || req.body.seatCount === undefined) {
     throw new ApiError(400, "tableName and seatCount is required");
   }
-  if (!req.params || !req.params.tableId) {
-    throw new ApiError(400, "tableId is required");
+  if (!req.params || !req.params.qrSlug || !req.params.restaurantSlug) {
+    throw new ApiError(400, "qrSlug and restaurantSlug is required");
   }
-  const tableId = req.params.tableId;
-
-  if (!isValidObjectId(tableId)) {
-    throw new ApiError(400, "Invalid tableId format");
-  }
+  const qrSlug = req.params.qrSlug;
+  const restaurantSlug = req.params.restaurantSlug;
 
   const { tableName, seatCount } = req.body;
   const user = req.user;
@@ -98,8 +95,20 @@ export const updateTable = asyncHandler(async (req, res) => {
     );
   }
 
+  const restaurant = await Restaurant.findOne({
+    slug: restaurantSlug,
+    ownerId: user!._id,
+  });
+
+  if (!restaurant) {
+    throw new ApiError(
+      404,
+      "Restaurant not found or you do not own this restaurant"
+    );
+  }
+
   const table = await Table.findOneAndUpdate(
-    { _id: tableId, restaurantId: { $in: user!.restaurantIds } },
+    { qrSlug, restaurantId: restaurant?._id },
     { $set: { tableName, seatCount } },
     { new: true }
   );
@@ -190,17 +199,18 @@ export const getTableBySlug = asyncHandler(async (req, res) => {
     // If user is authenticated, check if they are the owner or staff of the restaurant
     if (
       req.user.role === "owner" &&
-      restaurant.ownerId === req.user!._id
+      restaurant.ownerId.toString() === req.user!.id
     ) {
       canViewOrder = true;
     } else if (
-      req.user.role === "staff"
+      req.user.role === "staff" &&
+      restaurant.staffIds!.length > 0 &&
+      restaurant.staffIds!.map((id) => id.toString()).includes(req.user.id)
     ) {
       canViewOrder = true;
     }
   }
-  // if(req.user.!_id)
-console.log(canViewOrder, req.user?._id as string, restaurant.ownerId, restaurant.staffIds);
+
   const table = await Table.aggregate([
     {
       $match: {
@@ -261,4 +271,122 @@ console.log(canViewOrder, req.user?._id as string, restaurant.ownerId, restauran
   res
     .status(200)
     .json(new ApiResponse(200, table[0], "Table details fetched successfully"));
+});
+
+export const getAllTablesOfRestaurant = asyncHandler(async (req, res) => {
+  if (!req.params || !req.params.restaurantSlug) {
+    throw new ApiError(400, "restaurantId is required");
+  }
+  const restaurantSlug = req.params.restaurantSlug;
+
+  const {
+    page = 1,
+    limit = 10,
+    sortBy = "createdAt",
+    sortType = "asc",
+  } = req.query;
+
+  const pageNumber = parseInt(page.toString());
+  const limitNumber = parseInt(limit.toString());
+
+  if (pageNumber < 1 || limitNumber < 1) {
+    throw new ApiError(400, "Page and limit must be positive integers");
+  }
+
+  const user = req.user;
+
+  const restaurant = await Restaurant.findOne({ slug: restaurantSlug });
+  if (!restaurant) {
+    throw new ApiError(404, "Restaurant not found");
+  }
+
+  if (user!.role === "owner" && restaurant.ownerId.toString() !== user!.id) {
+    throw new ApiError(
+      403,
+      "You do not have permission to view this restaurant's tables"
+    );
+  } else if (
+    user!.role === "staff" &&
+    !restaurant.staffIds!.map((id) => id.toString()).includes(user!.id)
+  ) {
+    throw new ApiError(
+      403,
+      "You do not have permission to view this restaurant's tables"
+    );
+  }
+  // Fetch all tables for the restaurant
+  const tables = await Table.find({ restaurantId: restaurant._id })
+    .sort({
+      [sortBy.toString()]: sortType === "asc" ? 1 : -1, // Ascending or descending sort
+    })
+    .skip((pageNumber - 1) * limitNumber) // Pagination logic
+    .limit(limitNumber) // Limit the number of results
+    .select("-restaurantId -__v"); // Exclude restaurantId and __v fields
+
+  if (!tables || tables.length === 0) {
+    res
+      .status(404)
+      .json(new ApiResponse(404, [], "No tables found for this restaurant"));
+  } else {
+    const tableCount = await Table.countDocuments({
+      restaurantId: restaurant._id,
+    });
+    const totalPages = Math.ceil(tableCount / limitNumber);
+    res
+      .status(200)
+      .setHeader("X-Total-Count", tableCount.toString())
+      .setHeader("X-Total-Pages", totalPages.toString())
+      .json(
+        new ApiResponse(
+          200,
+          {
+            tables,
+            page: pageNumber,
+            limit: limitNumber,
+            totalPages,
+            totalCount: tableCount,
+          },
+          "Restaurant tables fetched successfully"
+        )
+      );
+  }
+});
+
+export const deleteTable = asyncHandler(async (req, res) => {
+  if (!req.params || !req.params.qrSlug || !req.params.restaurantSlug) {
+    throw new ApiError(400, "qrSlug and restaurantSlug are required");
+  }
+  const qrSlug = req.params.qrSlug;
+  const restaurantSlug = req.params.restaurantSlug;
+
+  const user = req.user;
+
+  if (user!.role !== "owner") {
+    throw new ApiError(403, "You do not have permission to delete a table");
+  }
+
+  const restaurant = await Restaurant.findOne({
+    slug: restaurantSlug,
+    ownerId: user!._id,
+  });
+
+  if (!restaurant) {
+    throw new ApiError(
+      404,
+      "Restaurant not found or you do not own this restaurant"
+    );
+  }
+
+  const table = await Table.findOneAndDelete({
+    qrSlug,
+    restaurantId: restaurant._id,
+  });
+
+  if (!table) {
+    throw new ApiError(404, "Table not found");
+  }
+
+  res
+    .status(200)
+    .json(new ApiResponse(200, null, "Table deleted successfully"));
 });

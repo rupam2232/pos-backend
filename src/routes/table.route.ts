@@ -3,11 +3,14 @@ import {
   createTable,
   toggleOccupiedStatus,
   updateTable,
-  getTableBySlug
+  getTableBySlug,
+  getAllTablesOfRestaurant,
+  deleteTable,
 } from "../controllers/table.controller.js";
 import { verifyAuth } from "../middlewares/auth.middleware.js";
 import rateLimit from "express-rate-limit";
 import { ApiError } from "../utils/ApiError.js";
+import { verifyOptionalAuth } from "../middlewares/optionalAuth.middleware.js";
 
 const router = Router();
 
@@ -40,14 +43,19 @@ router.post(
   createTable
 );
 
-router.patch("/update/:tableId", isProduction ? occupiedStatusUpdateLimit : (req, res, next) => next(), verifyAuth, updateTable);
-
 router.post(
   "/toggle-occupied-status/:tableId",
+  isProduction ? occupiedStatusUpdateLimit : (req, res, next) => next(),
   verifyAuth,
   toggleOccupiedStatus
 );
 
-router.get("/:restaurantSlug/:qrSlug", verifyAuth, getTableBySlug)
+router
+  .route("/:restaurantSlug/:qrSlug")
+  .get(verifyOptionalAuth, getTableBySlug)
+  .patch(verifyAuth, updateTable)
+  .delete(verifyAuth, deleteTable);
+
+router.get("/:restaurantSlug", verifyAuth, getAllTablesOfRestaurant);
 
 export default router;
