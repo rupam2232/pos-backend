@@ -14,6 +14,7 @@ import {
 import { rateLimit } from "express-rate-limit";
 import { ApiError } from "../utils/ApiError.js";
 import { upload } from "../middlewares/multer.middleware.js";
+import { isSubscriptionActive } from "../middlewares/subscriptionCheck.middleware.js";
 
 const router = Router();
 
@@ -43,6 +44,7 @@ router.post(
   "/create",
   isProduction ? createLimit : (req, res, next) => next(),
   verifyAuth,
+  isSubscriptionActive,
   createRestaurant
 );
 

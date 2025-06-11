@@ -100,13 +100,17 @@ const foodItemSchema: Schema<FoodItem> = new Schema(
       enum: ["veg", "non-veg"],
       required: [true, "Food type is required"],
     },
-    description: String,
+    description: {
+      type: String,
+      trim: true
+    },
     tags: {
       type: [String],
       default: [],
     },
     isAvailable: {
       type: Boolean,
+      default: true,
       required: [true, "Is available is required"],
     },
   },

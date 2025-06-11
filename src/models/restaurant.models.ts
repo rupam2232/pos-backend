@@ -13,7 +13,7 @@ export interface Restaurant extends Document {
   isCurrentlyOpen: boolean; // Whether the restaurant is currently open
   ownerId: Types.ObjectId; // Reference to the User who owns the restaurant
   staffIds?: Types.ObjectId[]; // Optional array of User IDs for staff members
-  categories?: string[]; // Optional array of categories/cuisines
+  categories: string[]; // Optional array of categories/cuisines
   openingTime?: string; // Optional opening time (e.g., "09:00")
   closingTime?: string; // Optional closing time (e.g., "22:00")
   taxRate: number; // Number of percentage owner wants to charge for taxes based on the sub total of order value like 5

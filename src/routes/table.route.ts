@@ -11,6 +11,7 @@ import { verifyAuth } from "../middlewares/auth.middleware.js";
 import rateLimit from "express-rate-limit";
 import { ApiError } from "../utils/ApiError.js";
 import { verifyOptionalAuth } from "../middlewares/optionalAuth.middleware.js";
+import { isSubscriptionActive } from "../middlewares/subscriptionCheck.middleware.js";
 
 const router = Router();
 
@@ -42,6 +43,7 @@ router
   .post(
     isProduction ? createLimit : (req, res, next) => next(),
     verifyAuth,
+    isSubscriptionActive,
     createTable
   );
 

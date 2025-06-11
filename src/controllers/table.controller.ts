@@ -46,7 +46,7 @@ export const createTable = asyncHandler(async (req, res) => {
   }
 
   const restaurantId = restaurant._id!.toString();
-  await canCreateTable(user!, restaurantId);
+  await canCreateTable(req.subscription!, restaurantId);
 
   // Try to create a unique qrSlug, retry if duplicate key error
   let table;
