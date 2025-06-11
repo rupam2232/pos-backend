@@ -20,6 +20,7 @@ const temporaryMediaSchema = new Schema<TemporaryMedia>({
       },
       message: "Media URL must be a valid image URL",
     },
+    trim: true,
     unique: true,
     required: true,
   },

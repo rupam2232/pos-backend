@@ -93,6 +93,12 @@ const foodItemSchema: Schema<FoodItem> = new Schema(
     imageUrls: {
       type: [String],
       default: [],
+      validate: {
+        validator: function (arr: string[]) {
+          return arr.length <= 5;
+        },
+        message: "You can only upload a maximum of 5 images for a food item",
+      },
     },
     category: String,
     foodType: {

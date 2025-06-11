@@ -39,6 +39,10 @@ export const createFoodItem = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Food type must be either 'veg' or 'non-veg'");
   }
 
+  if(imageUrls.length > 5) {
+    throw new ApiError(400, "You can only upload a maximum of 5 images for a food item");
+    }
+
   if (!hasVariants && variants.length > 0) {
     throw new ApiError(
       400,
