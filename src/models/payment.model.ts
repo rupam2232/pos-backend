@@ -11,7 +11,7 @@ export interface Payment extends Document {
   status: "pending" | "paid" | "failed"; // Payment status
   subtotal: number; // Amount for only food items (before tax, discount, tip)
   totalAmount: number; // Final amount to be paid (after discount, tax, tip, if any)
-  discountAmount?: number; // Amount deducted due to coupon (if any)
+  discountAmount?: number; // Amount deducted due to discount (if any)
   couponUsed?: Types.ObjectId; // Reference to the coupon code used (optional)
   taxAmount?: number; // Total tax applied (if any)
   tipAmount?: number; // Optional tip given by customer

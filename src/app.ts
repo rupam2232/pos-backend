@@ -8,6 +8,7 @@ import authRoute from "./routes/auth.route.js";
 import restaurantRoute from "./routes/restaurant.route.js";
 import mediaRoute from "./routes/media.route.js";
 import tableRoute from "./routes/table.route.js";
+import foodItemRoute from "./routes/foodItem.route.js";
 
 // Create Express app instance
 const app = express();
@@ -55,6 +56,7 @@ app.use("/api/v1/auth", authRoute)
 app.use("/api/v1/restaurant", restaurantRoute)
 app.use("/api/v1/table", tableRoute)
 app.use("/api/v1/media", mediaRoute)
+app.use("/api/v1/food-item", foodItemRoute)
 
 // Global error handler middleware
 app.use((err: any, req: Request, res: Response, next: NextFunction) => {

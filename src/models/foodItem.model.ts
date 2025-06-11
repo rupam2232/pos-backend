@@ -9,7 +9,7 @@ export interface FoodVariant extends Document {
   variantName: string; // Name/label of the variant (e.g., "Large", "Spicy")
   price: number; // Price for this variant
   description?: string; // Description for this variant
-  discountedPrice?: number; // Optional discounted price for this variant
+  discountedPrice?: number; // Optional final price after discount for this variant
   isAvailable: boolean; // Whether this variant is currently available
 }
 
@@ -29,6 +29,7 @@ const foodVariantSchema: Schema<FoodVariant> = new Schema({
   discountedPrice: Number,
   isAvailable: {
     type: Boolean,
+    default: true,
     required: [true, "Is available is required"],
   },
 });
@@ -41,7 +42,7 @@ export interface FoodItem extends Document {
   restaurantId: Types.ObjectId; // Reference to the Restaurant
   foodName: string; // Name of the food item
   price: number; // Base price of the food item
-  discountedPrice?: number; // Optional discounted price
+  discountedPrice?: number; // Optional final price after discount
   hasVariants: boolean; // Whether this item has variants
   variants: FoodVariant[]; // Array of variants (if any)
   imageUrls?: string[]; // Optional array of image URLs
@@ -130,6 +131,21 @@ const foodItemSchema: Schema<FoodItem> = new Schema(
  * Allows the food name to be used by different restaurants, but only once per restaurant.
  */
 foodItemSchema.index({ restaurantId: 1, foodName: 1 }, { unique: true });
+
+/**
+ * Compound index to allow searching by tags.
+ * This index will help in efficiently querying food items by their tags.
+ */
+foodItemSchema.index({ tags: 1 });
+
+/**
+ * Coompount index to ensure that all the variants of a food item are unique.
+ * This index will help in efficiently querying food items by their variants.
+ */
+foodItemSchema.index(
+  { restaurantId: 1, "variants.variantName": 1 },
+  { unique: true }
+);
 
 /**
  * Mongoose model for the FoodItem schema.

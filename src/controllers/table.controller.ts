@@ -358,7 +358,13 @@ export const getAllTablesOfRestaurant = asyncHandler(async (req, res) => {
   if (!tables || tables.length === 0) {
     res
       .status(404)
-      .json(new ApiResponse(404, [], "No tables found for this restaurant"));
+      .json(new ApiResponse(404, {
+        tables: [],
+        page: pageNumber,
+        limit: limitNumber,
+        totalPages: 0,
+        totalCount: 0,
+      }, "No tables found for this restaurant"));
   } else {
     const tableCount = await Table.countDocuments({
       restaurantId: restaurant._id,
