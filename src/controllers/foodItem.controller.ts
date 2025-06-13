@@ -6,6 +6,7 @@ import { Restaurant } from "../models/restaurant.models.js";
 import { canCreateFoodItem } from "../service/foodItem.service.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import cloudinary from "../utils/cloudinary.js";
+import { isValidObjectId } from "mongoose";
 
 function hasDuplicates(arr: string[]): boolean {
   const lowerArr = arr.map((tag) => tag.trim().toLowerCase());
@@ -227,6 +228,10 @@ export const getFoodItemById = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Food item ID and restaurant slug are required");
   }
 
+  if (!isValidObjectId(req.params.foodItemId)) {
+    throw new ApiError(400, "Invalid food item ID");
+  }
+
   const foodItem = await FoodItem.findById(req.params.foodItemId)
     .select("-__v")
     .populate({ path: "restaurantId", select: "name slug categories" });
@@ -254,6 +259,11 @@ export const toggleFoodItemAvailability = asyncHandler(async (req, res) => {
   if (!req.params || !req.params.foodItemId || !req.params.restaurantSlug) {
     throw new ApiError(400, "Food item ID and restaurant slug are required");
   }
+
+  if (!isValidObjectId(req.params.foodItemId)) {
+    throw new ApiError(400, "Invalid food item ID");
+  }
+
   const restaurantSlug = req.params.restaurantSlug;
   const user = req.user;
 
@@ -327,6 +337,10 @@ export const updateFoodItem = asyncHandler(async (req, res) => {
 
   if (!req.params || !req.params.foodItemId || !req.params.restaurantSlug) {
     throw new ApiError(400, "Food item ID and restaurant slug are required");
+  }
+
+  if (!isValidObjectId(req.params.foodItemId)) {
+    throw new ApiError(400, "Invalid food item ID");
   }
 
   // foodName price discountedPrice hasVariants variants imageUrls category foodType description tags
@@ -456,6 +470,10 @@ export const deleteFoodItem = asyncHandler(async (req, res) => {
 
   if (!req.params || !req.params.foodItemId || !req.params.restaurantSlug) {
     throw new ApiError(400, "Food item ID and restaurant slug are required");
+  }
+
+  if (!isValidObjectId(req.params.foodItemId)) {
+    throw new ApiError(400, "Invalid food item ID");
   }
 
   const restaurant = await Restaurant.findOne({
