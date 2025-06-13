@@ -133,21 +133,6 @@ const foodItemSchema: Schema<FoodItem> = new Schema(
 foodItemSchema.index({ restaurantId: 1, foodName: 1 }, { unique: true });
 
 /**
- * Compound index to allow searching by tags.
- * This index will help in efficiently querying food items by their tags.
- */
-foodItemSchema.index({ tags: 1 });
-
-/**
- * Coompount index to ensure that all the variants of a food item are unique.
- * This index will help in efficiently querying food items by their variants.
- */
-foodItemSchema.index(
-  { restaurantId: 1, "variants.variantName": 1 },
-  { unique: true }
-);
-
-/**
  * Mongoose model for the FoodItem schema.
  */
 export const FoodItem = model<FoodItem>("FoodItem", foodItemSchema);
