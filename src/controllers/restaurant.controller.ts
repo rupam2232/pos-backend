@@ -15,9 +15,20 @@ export const createRestaurant = asyncHandler(async (req, res) => {
   }
   const { restaurantName, slug, description, address, logoUrl } = req.body;
   const ownerId = req.user!._id;
-  //   const logoLocalPath = req.file?.path;
+
   if (req.user!.role !== "owner") {
     throw new ApiError(403, "Only owners can create restaurants.");
+  }
+
+  if (slug.length < 2 || slug.length > 9) {
+    throw new ApiError(400, "Slug must be between 3 to 8 characters long");
+  }
+
+  if (!/^[a-z0-9-]+$/.test(slug)) {
+    throw new ApiError(
+      400,
+      "Slug can only contain lowercase letters, numbers, and hyphens"
+    );
   }
 
   await canCreateRestaurant(req.user!, req.subscription!);
@@ -283,6 +294,17 @@ export const checkUniqueRestaurantSlug = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Restaurant slug is required");
   }
   const { slug } = req.params;
+
+  if (slug.length < 2 || slug.length > 9) {
+    throw new ApiError(400, "Slug must be between 3 to 8 characters long");
+  }
+
+  if (!/^[a-z0-9-]+$/.test(slug)) {
+    throw new ApiError(
+      400,
+      "Slug can only contain lowercase letters, numbers, and hyphens"
+    );
+  }
 
   const restaurant = await Restaurant.findOne({ slug });
   if (restaurant) {

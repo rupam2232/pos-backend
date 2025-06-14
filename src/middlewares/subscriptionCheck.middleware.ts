@@ -16,7 +16,7 @@ declare module "express-serve-static-core" {
 
 export const isSubscriptionActive = asyncHandler(async (req, _, next) => {
   const subscription = await Subscription.findOne({ userId: req.user!._id });
-  if (!subscription || !subscription.isSubscriptionActive)
+  if (!subscription || subscription.isSubscriptionActive === false)
     throw new ApiError(
       403,
       "No active subscription found. Please subscribe to continue using the service"
