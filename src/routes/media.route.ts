@@ -23,7 +23,7 @@ const restaurantLogoLimit = rateLimit({
 
 const foodItemImageLimit = rateLimit({
   windowMs: 60 * 1000, // 1 minutes
-  limit: 4, // Limit each IP to 2 requests per `window` (here, per 1 minutes).
+  limit: 4, // Limit each IP to 4 requests per `window` (here, per 1 minutes).
   standardHeaders: "draft-8", //draft-8: `RateLimit` header
   legacyHeaders: false, // Disable the `X-RateLimit-*` headers.
   handler: () => {

@@ -2,7 +2,7 @@ import path from "path";
 import fs from "fs";
 import cloudinary from "../utils/cloudinary.js";
 import { Restaurant } from "../models/restaurant.models.js";
-import { canCreateRestaurant } from "../service/restaurant.service.js";
+import { canCreateRestaurant, canToggleOpeningStatus } from "../service/restaurant.service.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
@@ -162,6 +162,8 @@ export const toggleRestaurantOpenStatus = asyncHandler(async (req, res) => {
   if (!restaurant) {
     throw new ApiError(404, "Restaurant not found or you are not the owner.");
   }
+
+  await canToggleOpeningStatus(restaurant)
 
   restaurant.isCurrentlyOpen = !restaurant.isCurrentlyOpen;
   await restaurant.save();
