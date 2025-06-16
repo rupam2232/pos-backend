@@ -1,3 +1,4 @@
+import { isValidObjectId, Types } from "mongoose";
 import { FoodItem } from "../models/foodItem.model.js";
 import { Order } from "../models/order.model.js";
 import { Restaurant } from "../models/restaurant.models.js";
@@ -58,10 +59,15 @@ export const createOrder = asyncHandler(async (req, res) => {
       if (!isVariantValid) {
         throw new ApiError(400, `Variant ${foodItem.variantName} for food item ${foodItem._id} is not valid`);
       }
+      // Ensure the variant is available
+      const variant = isFoodItemValid.variants.find(variant => variant.variantName === foodItem.variantName);
+      if ( !variant || variant.isAvailable === false) {
+        throw new ApiError(400, `Variant ${foodItem.variantName} for food item ${foodItem._id} is not available`);
+      }
     }
     foodItems.push({
       foodItemId: isFoodItemValid._id,
-      variantName: foodItem.variantName || undefined, // Ensure variantName is included if provided
+      variantName: foodItem.variantName || null, // Ensure variantName is included if provided
       quantity: foodItem.quantity || 1, // Default to 1 if quantity is not provided
       price: foodItem.variantName ? isFoodItemValid.variants.filter(variant => variant.variantName === foodItem.variantName)[0].discountedPrice || isFoodItemValid.variants.filter(variant => variant.variantName === foodItem.variantName)[0].price : isFoodItemValid.price,
     });
@@ -107,5 +113,230 @@ const totalAmount = foodItems.reduce((acc, item) => acc + item.price * item.quan
     201,
     order,
     "Order created successfully",
+  ));
+});
+
+export const getOrderById = asyncHandler(async (req, res) => {
+  if (!req.params.orderId || !req.params.restaurantSlug) {
+    throw new ApiError(400, "Order ID and restaurant slug are required");
+  }
+const restaurantSlug = req.params.restaurantSlug;
+const orderId = req.params.orderId;
+
+  if(!isValidObjectId(orderId)){
+    throw new ApiError(400, "Invalid order ID format");
+  }
+const restaurant = await Restaurant.findOne({ slug: restaurantSlug });
+  if (!restaurant) {
+    throw new ApiError(404, "Restaurant not found");
+  }
+
+  const order = await Order.aggregate([
+    {
+      $match: {
+        _id: new Types.ObjectId(orderId),
+        restaurantId: restaurant._id
+      }
+    },
+    {
+      $lookup: {
+        from: "restaurants",
+        localField: "restaurantId",
+        foreignField: "_id",
+        as: "restaurant",
+        pipeline: [
+        {
+            $project: {
+                categories: 0,
+                ownerId: 0,
+                createdAt: 0,
+                updatedAt: 0,
+                __v: 0,
+                address: 0,
+                description: 0,
+                closingTime: 0,
+                openingTime: 0,
+                staffIds: 0
+            }
+        }
+    ]
+      }
+    },
+    {
+      $unwind: "$restaurant"
+    },
+    {
+      $lookup: {
+        from: "tables",
+        localField: "tableId",
+        foreignField: "_id",
+        as: "table",
+        pipeline: [
+          {
+            $project: {
+              _id: 1,
+            tableName: 1,
+            qrSlug: 1,
+            }
+          }
+        ]
+      }
+    },
+    {
+      $unwind: "$table"
+    },
+    { $unwind: "$foodItems" },
+  // Lookup food item details
+    {
+    $lookup: {
+      from: "fooditems",
+      localField: "foodItems.foodItemId",
+      foreignField: "_id",
+      as: "foodItemDetails"
+    }
+  },
+  // Unwind foodItemDetails (should only be one per foodItemId)
+  { $unwind: "$foodItemDetails" },
+  // Group back to order structure, but build foodItems array with merged info
+    // {
+    //   $addFields: {
+    //     "foodItems": {
+    //       $cond: {
+    //         if: { $isArray: "$foodItems" },
+    //         then: "$foodItems",
+    //         else: [ "$foodItems" ] // Ensure foodItems is always an array
+    //       }
+    //     }
+        // "foodItems.foodItemId": "$foodItems.foodItemDetails._id",
+        // "foodItems.foodName": "$foodItems.foodItemDetails.foodName",
+        // "foodItems.price": "$foodItems.foodItemDetails.price",
+        // "foodItems.discountedPrice": "$foodItems.foodItemDetails.discountedPrice",
+        // "foodItems.hasVariants": "$foodItems.foodItemDetails.hasVariants",
+        // "foodItems.variants": "$foodItems.foodItemDetails.variants",
+      // }
+    // },
+    {
+    $group: {
+      _id: "$_id",
+      restaurant: { $first: "$restaurant" },
+      table: { $first: "$table" },
+      status: { $first: "$status" },
+      totalAmount: { $first: "$totalAmount" },
+      discountAmount: { $first: "$discountAmount" },
+      finalAmount: { $first: "$finalAmount" },
+      paymentMethod: { $first: "$paymentMethod" },
+      isPaid: { $first: "$isPaid" },
+      notes: { $first: "$notes" },
+      couponUsed: { $first: "$couponUsed" },
+      externalOrderId: { $first: "$externalOrderId" },
+      externalPlatform: { $first: "$externalPlatform" },
+      kitchenStaffId: { $first: "$kitchenStaffId" },
+      customerName: { $first: "$customerName" },
+      customerPhone: { $first: "$customerPhone" },
+      deliveryAddress: { $first: "$deliveryAddress" },
+      createdAt: { $first: "$createdAt" },
+      orderedFoodItems: {
+        $push: {
+          foodItemId: "$foodItems.foodItemId",
+          variantName: "$foodItems.variantName",
+          quantity: "$foodItems.quantity",
+          price: "$foodItems.price",
+          foodPrice: "$foodItems.foodItemDetails.price",
+          foodDiscountedPrice: "$foodItems.discountedPrice",
+          foodName: "$foodItemDetails.foodName",
+          firstImageUrl: {
+            $cond: {
+              if: { $gt: [{ $size: "$foodItemDetails.imageUrls" }, 0] },
+              then: { $arrayElemAt: ["$foodItemDetails.imageUrls", 0] },
+              else: null
+            }
+          }, // Get the first image URL if available
+          foodType: "$foodItemDetails.foodType",
+          // check if the food item is a varinat
+          // foodItemIsVariant: { $cond: { if: { $ne: ["$foodItems.variantName", null] }, then: true, else: false } },
+          isVariant: {
+            $cond: {
+              if: { $ne: ["$foodItems.variantName", null] },
+              then: true,
+              else: false
+            }
+          },
+          variantDetails: {
+            // Get the variant details if variantName is provided
+            $cond: {
+              if: { $ne: ["$foodItems.variantName", null] },
+              then: {
+                $arrayElemAt: [
+                  {
+                    $filter: {
+                      input: "$foodItemDetails.variants",
+                      as: "variant",
+                      cond: { $eq: ["$$variant.variantName", "$foodItems.variantName"] }
+                    }
+                  },
+                  0
+                ]
+              },
+              else: null
+            }
+          }
+        }
+      }
+    }
+  }
+  ])
+
+  if (!order || order.length === 0) {
+    throw new ApiError(404, "Order not found");
+  }
+
+  res.status(200).json(new ApiResponse(
+    200,
+    order[0],
+    "Order retrieved successfully",
+  ));
+});
+
+export const getOrdersByRestaurant = asyncHandler(async (req, res) => {
+  if (!req.params.restaurantSlug) {
+    throw new ApiError(400, "Restaurant slug is required");
+  }
+
+  const restaurant = await Restaurant.findOne({ slug: req.params.restaurantSlug });
+
+  if (!restaurant) {
+    throw new ApiError(404, "Restaurant not found");
+  }
+
+  const orders = await Order.find({ restaurantId: restaurant._id })
+    .populate("tableId", "qrSlug tableNumber")
+    .populate("foodItems.foodItemId", "name price variants");
+
+  res.status(200).json(new ApiResponse(
+    200,
+    orders,
+    "Orders retrieved successfully",
+  ));
+});
+
+export const getOrdersByTable = asyncHandler(async (req, res) => {
+  if (!req.params.tableQrSlug) {
+    throw new ApiError(400, "Table QR slug is required");
+  }
+
+  const table = await Table.findOne({ qrSlug: req.params.tableQrSlug });
+
+  if (!table) {
+    throw new ApiError(404, "Table not found");
+  }
+
+  const orders = await Order.find({ tableId: table._id })
+    .populate("restaurantId", "name slug")
+    .populate("foodItems.foodItemId", "name price variants");
+
+  res.status(200).json(new ApiResponse(
+    200,
+    orders,
+    "Orders retrieved successfully",
   ));
 });

@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { createOrder } from "../controllers/order.controller.js";
+import { createOrder, getOrderById } from "../controllers/order.controller.js";
 import rateLimit from "express-rate-limit";
 import { ApiError } from "../utils/ApiError.js";
 const router = Router();
@@ -21,5 +21,7 @@ router.post(
   isProduction ? createLimit : (req, res, next) => next(),
   createOrder
 );
+
+router.get("/:restaurantSlug/:orderId", getOrderById);
 
 export default router;
