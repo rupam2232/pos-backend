@@ -1,7 +1,8 @@
 import { Router } from "express";
-import { createOrder, getOrderById } from "../controllers/order.controller.js";
+import { createOrder, getOrderById, getOrdersByRestaurant, getOrderByTable, updateOrderStatus } from "../controllers/order.controller.js";
 import rateLimit from "express-rate-limit";
 import { ApiError } from "../utils/ApiError.js";
+import { verifyAuth } from "../middlewares/auth.middleware.js";
 const router = Router();
 
 const createLimit = rateLimit({
@@ -23,5 +24,11 @@ router.post(
 );
 
 router.get("/:restaurantSlug/:orderId", getOrderById);
+
+router.get("/:restaurantSlug", verifyAuth, getOrdersByRestaurant)
+
+router.get("/:restaurantSlug/table/:tableQrSlug", verifyAuth, getOrderByTable);
+
+router.patch("/:restaurantSlug/:orderId/status", verifyAuth, updateOrderStatus);
 
 export default router;
