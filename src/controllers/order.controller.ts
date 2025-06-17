@@ -147,16 +147,12 @@ const restaurant = await Restaurant.findOne({ slug: restaurantSlug });
         pipeline: [
         {
             $project: {
-                categories: 0,
-                ownerId: 0,
-                createdAt: 0,
-                updatedAt: 0,
-                __v: 0,
-                address: 0,
-                description: 0,
-                closingTime: 0,
-                openingTime: 0,
-                staffIds: 0
+              _id: 1,
+            restaurantName: 1,
+            slug: 1,
+            taxRate: 1,
+            isTaxIncludedInPrice: 1,
+            taxLabel: 1,
             }
         }
     ]
@@ -198,23 +194,6 @@ const restaurant = await Restaurant.findOne({ slug: restaurantSlug });
   // Unwind foodItemDetails (should only be one per foodItemId)
   { $unwind: "$foodItemDetails" },
   // Group back to order structure, but build foodItems array with merged info
-    // {
-    //   $addFields: {
-    //     "foodItems": {
-    //       $cond: {
-    //         if: { $isArray: "$foodItems" },
-    //         then: "$foodItems",
-    //         else: [ "$foodItems" ] // Ensure foodItems is always an array
-    //       }
-    //     }
-        // "foodItems.foodItemId": "$foodItems.foodItemDetails._id",
-        // "foodItems.foodName": "$foodItems.foodItemDetails.foodName",
-        // "foodItems.price": "$foodItems.foodItemDetails.price",
-        // "foodItems.discountedPrice": "$foodItems.foodItemDetails.discountedPrice",
-        // "foodItems.hasVariants": "$foodItems.foodItemDetails.hasVariants",
-        // "foodItems.variants": "$foodItems.foodItemDetails.variants",
-      // }
-    // },
     {
     $group: {
       _id: "$_id",
@@ -241,8 +220,6 @@ const restaurant = await Restaurant.findOne({ slug: restaurantSlug });
           variantName: "$foodItems.variantName",
           quantity: "$foodItems.quantity",
           price: "$foodItems.price",
-          foodPrice: "$foodItems.foodItemDetails.price",
-          foodDiscountedPrice: "$foodItems.discountedPrice",
           foodName: "$foodItemDetails.foodName",
           firstImageUrl: {
             $cond: {
@@ -253,13 +230,12 @@ const restaurant = await Restaurant.findOne({ slug: restaurantSlug });
           }, // Get the first image URL if available
           foodType: "$foodItemDetails.foodType",
           // check if the food item is a varinat
-          // foodItemIsVariant: { $cond: { if: { $ne: ["$foodItems.variantName", null] }, then: true, else: false } },
-          isVariant: {
-            $cond: {
-              if: { $ne: ["$foodItems.variantName", null] },
-              then: true,
-              else: false
-            }
+          isVariantOrder: {
+            $cond: [
+              { $ne: [ { $ifNull: ["$foodItems.variantName", ""] }, "" ] },
+              true,
+              false
+            ]
           },
           variantDetails: {
             // Get the variant details if variantName is provided
