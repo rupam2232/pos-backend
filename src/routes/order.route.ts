@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { createOrder, getOrderById, getOrdersByRestaurant, getOrderByTable, updateOrderStatus } from "../controllers/order.controller.js";
+import { createOrder, getOrderById, getOrdersByRestaurant, getOrderByTable, updateOrderStatus, updateOrder } from "../controllers/order.controller.js";
 import rateLimit from "express-rate-limit";
 import { ApiError } from "../utils/ApiError.js";
 import { verifyAuth } from "../middlewares/auth.middleware.js";
@@ -23,7 +23,9 @@ router.post(
   createOrder
 );
 
-router.get("/:restaurantSlug/:orderId", getOrderById);
+router.route("/:restaurantSlug/:orderId")
+  .get(getOrderById) // Get order by ID
+  .patch(verifyAuth, updateOrder); // Update order
 
 router.get("/:restaurantSlug", verifyAuth, getOrdersByRestaurant)
 

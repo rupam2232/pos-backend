@@ -89,7 +89,9 @@ const orderSchema: Schema<Order> = new Schema(
         },
         message: "Order must contain at least one food item",
       },
-      immutable: true,
+      immutable(doc) {
+        return doc.status === "completed" || doc.status === "cancelled";
+      },
     },
     status: {
       type: String,
@@ -110,17 +112,23 @@ const orderSchema: Schema<Order> = new Schema(
     totalAmount: {
       type: Number,
       required: [true, "Total amount is required"],
-      immutable: true,
+      immutable(doc) {
+        return doc.status === "completed" || doc.status === "cancelled";
+      },
     },
     discountAmount: {
       type: Number,
       default: 0,
-      immutable: true,
+      immutable(doc) {
+        return doc.status === "completed" || doc.status === "cancelled";
+      },
     },
     finalAmount: {
       type: Number,
       required: [true, "Final amount is required"],
-      immutable: true,
+      immutable(doc) {
+        return doc.status === "completed" || doc.status === "cancelled";
+      },
     },
     paymentMethod: {
       type: String,

@@ -470,13 +470,17 @@ export const getOrdersByRestaurant = asyncHandler(async (req, res) => {
     );
   } else {
     res.status(200).json(
-      new ApiResponse(200, {
-        orders,
-        page: pageNumber,
-        limit: limitNumber,
-        totalPages: Math.ceil(orderCount / limitNumber),
-        totalOrders: orderCount,
-      }, "Orders retrieved successfully")
+      new ApiResponse(
+        200,
+        {
+          orders,
+          page: pageNumber,
+          limit: limitNumber,
+          totalPages: Math.ceil(orderCount / limitNumber),
+          totalOrders: orderCount,
+        },
+        "Orders retrieved successfully"
+      )
     );
   }
 });
@@ -486,7 +490,7 @@ export const getOrderByTable = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Restaurant slug and table QR slug are required");
   }
 
-   const restaurant = await Restaurant.findOne({
+  const restaurant = await Restaurant.findOne({
     slug: req.params.restaurantSlug,
   });
 
@@ -521,7 +525,10 @@ export const getOrderByTable = asyncHandler(async (req, res) => {
     );
   }
 
-  const table = await Table.findOne({ restaurantId: restaurant._id, qrSlug: req.params.tableQrSlug });
+  const table = await Table.findOne({
+    restaurantId: restaurant._id,
+    qrSlug: req.params.tableQrSlug,
+  });
 
   if (!table) {
     throw new ApiError(404, "Table not found");
@@ -537,8 +544,9 @@ export const getOrderByTable = asyncHandler(async (req, res) => {
         _id: table.currentOrderId,
         restaurantId: restaurant._id,
         tableId: table._id,
-      }
-    }, {
+      },
+    },
+    {
       $lookup: {
         from: "tables",
         localField: "tableId",
@@ -607,9 +615,9 @@ export const getOrderByTable = asyncHandler(async (req, res) => {
             },
           },
         },
-      }
-    }
-  ])
+      },
+    },
+  ]);
 
   if (!order || order.length === 0) {
     throw new ApiError(404, "No orders found for this table");
@@ -625,17 +633,29 @@ export const updateOrderStatus = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Order ID and restaurant slug are required");
   }
 
-  if ( !req.body || !req.body.status) {
+  if (!req.body || !req.body.status) {
     throw new ApiError(400, "Status is required");
   }
 
   const { status } = req.body;
 
-  if (!status || !["pending", "preparing", "ready", "served", "completed", "cancelled"].includes(status)) {
+  if (
+    !status ||
+    ![
+      "pending",
+      "preparing",
+      "ready",
+      "served",
+      "completed",
+      "cancelled",
+    ].includes(status)
+  ) {
     throw new ApiError(400, "Valid status is required");
   }
 
-  const restaurant = await Restaurant.findOne({ slug: req.params.restaurantSlug });
+  const restaurant = await Restaurant.findOne({
+    slug: req.params.restaurantSlug,
+  });
 
   if (!restaurant) {
     throw new ApiError(404, "Restaurant not found");
@@ -668,9 +688,10 @@ export const updateOrderStatus = asyncHandler(async (req, res) => {
     );
   }
 
-  const order = await Order.findOne(
-    { _id: req.params.orderId, restaurantId: restaurant._id }
-  );
+  const order = await Order.findOne({
+    _id: req.params.orderId,
+    restaurantId: restaurant._id,
+  });
 
   if (!order) {
     throw new ApiError(404, "Order not found");
@@ -682,13 +703,22 @@ export const updateOrderStatus = asyncHandler(async (req, res) => {
   }
 
   // Check if the staff is the one who updated the order before
-  if(order.kitchenStaffId && order.kitchenStaffId.toString() !== req.user!._id!.toString()) {
-    throw new ApiError(403, "Only the kitchen staff who updated the order can change its status");
+  if (
+    order.kitchenStaffId &&
+    order.kitchenStaffId.toString() !== req.user!._id!.toString()
+  ) {
+    throw new ApiError(
+      403,
+      "Only the kitchen staff who updated the order can change its status"
+    );
   }
 
   // Check if the order status can be updated
   if (["completed", "cancelled"].includes(order.status)) {
-    throw new ApiError(400, "Cannot update status of completed or cancelled orders");
+    throw new ApiError(
+      400,
+      "Cannot update status of completed or cancelled orders"
+    );
   }
 
   // Update the order status
@@ -708,5 +738,153 @@ export const updateOrderStatus = asyncHandler(async (req, res) => {
     }
   }
 
-  res.status(200).json(new ApiResponse(200, order, "Order status updated successfully"));
+  res
+    .status(200)
+    .json(new ApiResponse(200, order, "Order status updated successfully"));
+});
+
+export const updateOrder = asyncHandler(async (req, res) => {
+  if (!req.params.orderId || !req.params.restaurantSlug) {
+    throw new ApiError(400, "Order ID and restaurant slug are required");
+  }
+
+  if (!req.body || !req.body.foodItems) {
+    throw new ApiError(400, "Food items are required");
+  }
+
+  const { foodItems, notes } = req.body;
+
+  if (!foodItems || !Array.isArray(foodItems) || foodItems.length === 0) {
+    throw new ApiError(400, "Food items are required");
+  }
+
+  const restaurant = await Restaurant.findOne({
+    slug: req.params.restaurantSlug,
+  });
+
+  if (!restaurant) {
+    throw new ApiError(404, "Restaurant not found");
+  }
+
+  if (req.user?.role === "owner") {
+    if (restaurant.ownerId.toString() !== req.user!._id!.toString()) {
+      throw new ApiError(
+        403,
+        "You are not authorized to update orders for this restaurant"
+      );
+    }
+  } else if (req.user?.role === "staff") {
+    if (
+      !restaurant.staffIds ||
+      restaurant.staffIds.length === 0 ||
+      !restaurant.staffIds.some(
+        (staff) => staff._id.toString() === req.user!._id!.toString()
+      )
+    ) {
+      throw new ApiError(
+        403,
+        "You are not authorized to update orders for this restaurant"
+      );
+    }
+  } else {
+    throw new ApiError(
+      403,
+      "You are not authorized to update orders for this restaurant"
+    );
+  }
+
+  const order = await Order.findOne({
+    _id: req.params.orderId,
+    restaurantId: restaurant._id,
+  });
+
+  if (!order) {
+    throw new ApiError(404, "Order not found");
+  }
+
+  // Check if the order is already completed or cancelled
+  if (["ready", "served", "completed", "cancelled"].includes(order.status)) {
+    throw new ApiError(400, "Cannot update order that is already completed or cancelled");
+  }
+
+  // Validate food items
+  let updatedFoodItems = [];
+  for (const foodItem of foodItems) {
+    if (
+      !foodItem._id ||
+      !foodItem.quantity ||
+      typeof foodItem.quantity !== "number"
+    ) {
+      throw new ApiError(400, "Each food item must have an _id and quantity");
+    }
+    const isFoodItemValid = await FoodItem.findOne({
+      _id: foodItem._id,
+      restaurantId: restaurant._id,
+      isAvailable: true,
+    });
+    if (!isFoodItemValid) {
+      throw new ApiError(
+        400,
+        `Food item with id ${foodItem._id} is not available`
+      );
+    }
+
+    if (foodItem.variantName) {
+      if (isFoodItemValid.hasVariants === false) {
+        throw new ApiError(
+          400,
+          `Food item ${foodItem._id} does not have variants`
+        );
+      }
+      const isVariantValid = isFoodItemValid.variants.some(
+        (variant) => variant.variantName === foodItem.variantName
+      );
+      if (!isVariantValid) {
+        throw new ApiError(
+          400,
+          `Variant ${foodItem.variantName} for food item ${foodItem._id} is not valid`
+        );
+      }
+      // Ensure the variant is available
+      const variant = isFoodItemValid.variants.find(
+        (variant) => variant.variantName === foodItem.variantName
+      );
+      if (!variant || variant.isAvailable === false) {
+        throw new ApiError(
+          400,
+          `Variant ${foodItem.variantName} for food item ${foodItem._id} is not available`
+        );
+      }
+    }
+    updatedFoodItems.push({
+      foodItemId: isFoodItemValid._id,
+      variantName: foodItem.variantName || null, // Ensure variantName is included if provided
+      quantity: foodItem.quantity || 1, // Default to 1 if quantity is not provided
+      price: foodItem.variantName
+        ? isFoodItemValid.variants.filter(
+            (variant) => variant.variantName === foodItem.variantName
+          )[0].discountedPrice ||
+          isFoodItemValid.variants.filter(
+            (variant) => variant.variantName === foodItem.variantName
+          )[0].price
+        : isFoodItemValid.price,
+    });
+  }
+  // Update the order with new food items and notes
+  order.foodItems = updatedFoodItems as typeof order.foodItems;
+
+  order.notes = notes || order.notes; // Update notes if provided, otherwise keep existing notes
+  
+  order.totalAmount = updatedFoodItems.reduce(
+    (acc, item) => acc + item.price * item.quantity,
+    0
+  ); // Recalculate total amount from food items
+  order.finalAmount = restaurant.isTaxIncludedInPrice
+    ? order.totalAmount
+    : order.totalAmount + (order.totalAmount * restaurant.taxRate) / 100; // Recalculate final amount including tax if not included in price
+
+  await order.save();
+  res
+    .status(200)
+    .json(new ApiResponse(200, order, "Order updated successfully"));
 });
