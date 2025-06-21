@@ -1,6 +1,7 @@
 export const verificationEmailTemplate = (
-  name: string,
-  verificationCode: number
+  name: string = "User",
+  verificationCode: string,
+  codeExpiryTime: number = 5 // in minutes
 ): string => {
   return `
 <!DOCTYPE html>
@@ -21,7 +22,7 @@ export const verificationEmailTemplate = (
       <span style="font-size: 32px; font-weight: bold; letter-spacing: 5px; color: #4CAF50;">${verificationCode}</span>
     </div>
     <p>Enter this code on the verification page to complete your registration.</p>
-    <p>This code will expire in 5 minutes for security reasons.</p>
+    <p>This code will expire in ${codeExpiryTime} minutes for security reasons.</p>
     <p>If you didn't create an account with us, please ignore this email.</p>
     <p>Best regards,<br>Team ${process.env.SERVER_NAME}</p>
   </div>
@@ -114,7 +115,7 @@ export const passwordResetSuccessTemplate = (name: string): string => {
 
 export const passwordResetRequestTemplate = (
   name: string,
-  verificationCode: number
+  verificationCode: string
 ): string => {
   return `
 <!DOCTYPE html>

@@ -2,12 +2,6 @@ import { Otp } from "../models/otp.model.js";
 import { asyncHandler } from "../utils/asyncHandler.js"
 import { ApiError } from "../utils/ApiError.js"
 
-declare module "express-serve-static-core" {
-  interface Request {
-    verifyOtp?: boolean;
-  }
-}
-
 export const verifyOtp = asyncHandler(async (req, _, next) => {
     const { email, otp } = req.body;
     if (!email || !otp) {
@@ -35,7 +29,6 @@ export const verifyOtp = asyncHandler(async (req, _, next) => {
     }
     
     await Otp.deleteOne({email: otpData.email});
-    req.verifyOtp = true;
 
     next();
 })

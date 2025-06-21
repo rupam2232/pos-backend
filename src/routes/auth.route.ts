@@ -27,7 +27,7 @@ const isProduction = process.env?.NODE_ENV === "production";
 // Apply rate limiting only in production
 if (isProduction) router.use(limiter);
 
-router.post("/signup",  signup);
+router.post("/signup", verifyOtp, signup);
 router.post("/signin", signin);
 router.post("/google", google);
 router.post("/signout", verifyAuth, signout);

@@ -23,6 +23,9 @@ export const signup = async (
   res: Response,
   next: NextFunction
 ) => {
+  if(!req.body){
+    throw new ApiError(400, "Request body is required");
+  }
   // Start a MongoDB session for transaction
   const session = await startSession();
   session.startTransaction();

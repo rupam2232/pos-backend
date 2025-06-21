@@ -10,6 +10,7 @@ import mediaRoute from "./routes/media.route.js";
 import tableRoute from "./routes/table.route.js";
 import foodItemRoute from "./routes/foodItem.route.js";
 import orderRoute from "./routes/order.route.js";
+import otpRoute from "./routes/otp.route.js";
 
 // Create Express app instance
 const app = express();
@@ -59,6 +60,7 @@ app.use("/api/v1/table", tableRoute)
 app.use("/api/v1/media", mediaRoute)
 app.use("/api/v1/food-item", foodItemRoute)
 app.use("/api/v1/order", orderRoute)
+app.use("/api/v1/otp", otpRoute)
 
 // Global error handler middleware
 app.use((err: any, req: Request, res: Response, next: NextFunction) => {

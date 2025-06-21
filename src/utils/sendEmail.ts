@@ -19,7 +19,7 @@ const optionsArray = [
   {
     context: "change-password",
     emailCategory: "Change password",
-    subject: "Change your password"
+    subject: "Password change request",
   }, {
     context: "new-login",
     emailCategory: "New Login",
@@ -56,7 +56,7 @@ async function sendEmail(
         });
         return {
           success: true,
-          message: "email send successfully.",
+          message: "Email sent successfully",
         };
       }
     }
@@ -68,7 +68,7 @@ async function sendEmail(
     console.error("Error sending email:", error);
     return {
       success: false,
-      message: "Failed to send email.",
+      message: "Failed to send email",
     };
   }
 }

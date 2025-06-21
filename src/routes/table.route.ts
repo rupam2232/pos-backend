@@ -21,7 +21,7 @@ const createLimit = rateLimit({
   standardHeaders: "draft-8", //draft-8: `RateLimit` header
   legacyHeaders: false, // Disable the `X-RateLimit-*` headers.
   handler: () => {
-    throw new ApiError(429, "Too many attempts, please try again in a minute.");
+    throw new ApiError(429, "Too many attempts, please try again in a minute");
   },
 });
 
@@ -31,7 +31,7 @@ const occupiedStatusUpdateLimit = rateLimit({
   standardHeaders: "draft-8", //draft-8: `RateLimit` header
   legacyHeaders: false, // Disable the `X-RateLimit-*` headers.
   handler: () => {
-    throw new ApiError(429, "Too many attempts, please try again in a minute.");
+    throw new ApiError(429, "Too many attempts, please try again in a minute");
   },
 });
 
