@@ -7,7 +7,7 @@ import { Schema, model, Document, Types } from "mongoose";
  */
 export interface Payment extends Document {
   orderId: Types.ObjectId; // Reference to the related Order
-  method: "cash" | "upi" | "card"; // Type of payment (cash, UPI, or card)
+  method: "cash" | "online"; // Type of payment (cash, or online)
   status: "pending" | "paid" | "failed"; // Payment status
   subtotal: number; // Amount for only food items (before tax, discount, tip)
   totalAmount: number; // Final amount to be paid (after discount, tax, tip, if any)
@@ -16,8 +16,11 @@ export interface Payment extends Document {
   taxAmount?: number; // Total tax applied (if any)
   tipAmount?: number; // Optional tip given by customer
   kitchenStaffId?: Types.ObjectId; // Optional reference to the kitchen staff handling the cash payment
-  transactionId?: string; // UPI/Card transaction reference (if any)
   paymentGateway?: string; // Payment gateway used (e.g., "Razorpay", "Stripe")
+  gatewayOrderId?: string; // Optional order ID from the payment gateway (if applicable)
+  gatewayPaymentId?: string; // Optional payment ID from the payment gateway (if applicable)
+  gatewaySignature?: string; // Optional signature from the payment gateway (if applicable)
+  transactionId?: string; // UPI/Card transaction reference (if any)
   createdAt: Date; // Timestamp when the document was first created (set automatically, never changes)
   updatedAt?: Date; // Timestamp when the document was last updated (set automatically, updates on modification)
 }
@@ -36,7 +39,7 @@ const paymentSchema: Schema<Payment> = new Schema(
     },
     method: {
       type: String,
-      enum: ["cash", "upi", "card"],
+      enum: ["cash", "online"],
       required: [true, "Payment method is required"],
       immutable(doc) {
         return doc.status === "paid" || doc.status === "failed";
@@ -93,17 +96,32 @@ const paymentSchema: Schema<Payment> = new Schema(
         return !!doc.kitchenStaffId;
       },
     },
-    transactionId: {
-      type: String,
-      immutable(doc) {
-        return doc.method === "upi" || doc.method === "card";
-      },
-    },
     paymentGateway: {
       type: String,
       immutable(doc) {
-        return doc.method === "upi" || doc.method === "card";
+        return doc.method === "paid" || doc.method === "failed";
       },
+    },
+    gatewayOrderId: {
+      type: String,
+      immutable(doc) {
+        return doc.method === "paid" || doc.method === "failed";
+      },
+    },
+    gatewayPaymentId: {
+      type: String,
+      immutable(doc) {
+        return doc.method === "paid" || doc.method === "failed";
+      },
+    },
+    gatewaySignature: {
+      type: String,
+      immutable(doc) {
+        return doc.method === "paid" || doc.method === "failed";
+      },
+    },
+    transactionId: {
+      type: String,
     },
     createdAt: {
       type: Date,

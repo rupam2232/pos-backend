@@ -47,10 +47,7 @@ export interface Order extends Document {
     | "served"
     | "completed"
     | "cancelled"; // Order status (pending, preparing, etc.)
-  totalAmount: number; // The original total before discounts
-  discountAmount?: number; // The discount applied (if any)
-  finalAmount: number; // The amount the user actually paid
-  paymentMethod: "online" | "cash"; // Payment method (online, cash)
+  paymentAttempts?: Types.ObjectId[]; // Optional array of payment attempt IDs
   isPaid: boolean; // Whether the order is paid
   notes?: string; // Optional notes for the order
   couponUsed?: Types.ObjectId; // Optional reference to the coupon code used
@@ -109,35 +106,15 @@ const orderSchema: Schema<Order> = new Schema(
         return doc.status === "completed" || doc.status === "cancelled";
       },
     },
-    totalAmount: {
-      type: Number,
-      required: [true, "Total amount is required"],
-      immutable(doc) {
-        return doc.status === "completed" || doc.status === "cancelled";
+    paymentAttempts: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: "Payment",
+        immutable(doc) {
+          return doc.status === "completed" || doc.status === "cancelled";
+        },
       },
-    },
-    discountAmount: {
-      type: Number,
-      default: 0,
-      immutable(doc) {
-        return doc.status === "completed" || doc.status === "cancelled";
-      },
-    },
-    finalAmount: {
-      type: Number,
-      required: [true, "Final amount is required"],
-      immutable(doc) {
-        return doc.status === "completed" || doc.status === "cancelled";
-      },
-    },
-    paymentMethod: {
-      type: String,
-      required: [true, "Payment method is required"],
-      enum: ["online", "cash"],
-      immutable(doc) {
-        return doc.status === "completed" || doc.status === "cancelled";
-      },
-    },
+    ],
     isPaid: {
       type: Boolean,
       required: [true, "Is paid is required"],
